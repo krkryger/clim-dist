@@ -7,7 +7,6 @@ data/*
 
 temp/
 
-references/
+references/*
 
-meta/*
-!meta/M1_workflow_chart.png
+!references/M1_workflow_chart.png
