@@ -1,0 +1,13 @@
+.ipynb_checkpoints/
+__pycache__/
+/**/.ipynb_checkpoints/
+/**/__pycache__
+
+data/*
+
+temp/
+
+references/
+
+meta/*
+!meta/M1_workflow_chart.png
