@@ -7,21 +7,17 @@ from symspellpy import SymSpell, Verbosity
 
 ### GENERAL UTILS
 
-def strip_word(word):
+def strip_word(word, extra_symbols):
     '''strip commas, spaces from end of the string.'''
     
-    unwanted_symbols = [' ', '.', ',', ';', "'", '"', '-', '/', '\\', '(', ')', '[', ']', '{', '}']
+    unwanted_symbols = ' .,;"-/\()[]{}|«»<>_'
+    unwanted_symbols += extra_symbols
     
-    #strip from end
-    while len(word)>1 and word[-1] in unwanted_symbols:
-        word = word[0:-1]
-    #strip from beginning    
-    while len(word)>1 and word[0] in unwanted_symbols:
-        word = word[1:]
-    if word in unwanted_symbols:
-        return ''
-    else:
-        return word
+    symbolsstring = ''.join(unwanted_symbols)
+    
+    word = word.strip(symbolsstring)
+    
+    return word
 
 
 ### PYSPELL UTILS

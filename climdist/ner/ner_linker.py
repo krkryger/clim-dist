@@ -6,10 +6,11 @@ import edit_distance
 
 
 class NERlinker:
-    def __init__(self, data, nlp, placename_files):
+    def __init__(self, data, nlp, placename_files, ignorelocs=None):
         self.nlp = nlp
         self.data = data
         self.placename_files = placename_files
+        self.ignorelocs = ignorelocs
         self.loc_data = self.create_loc_data()
         self.altnames = self.create_altnames()
         self.ed = edit_distance.edit_distance
@@ -134,7 +135,10 @@ class NERlinker:
 
             return (bestname, bestdist)
 
-    def get_loc_names(self, doc, maxdist=1):
+    def get_loc_names(self, doc, maxdist=1, stripwords=False):
+
+        if stripwords == True:
+            from climdist.ocr.spellcorrection import strip_word
 
         entset = set([ent.text for ent in doc.ents if ent.label_ == "LOC"])
 
@@ -144,6 +148,11 @@ class NERlinker:
             print(f"LOC-s in concordance: {entset}")
 
             for entname in entset:
+                if stripwords == True:
+                    entname = strip_word(entname, extra_symbols="?!|«»<>_'")
+                if entname in self.ignorelocs:
+                    print(f'Passing {entname}', '\n')
+                    continue
                 print("Searching for", entname)
                 candidates = {}
                 for namelist in self.altnames:
@@ -169,12 +178,12 @@ class NERlinker:
 
             if len(ix) > 0:
                 location_id = int(ix.id.values[0])
-                location_lat = int(ix.lat.values[0])
-                location_long = int(ix.long.values[0])
+                location_lat = float(ix.lat.values[0])
+                location_long = float(ix.long.values[0])
 
         return (location_id, location_lat, location_long)
 
-    def link(self, entdist, window_before, window_after, output_path, render=False):
+    def link(self, entdist, window_before, window_after, output_path, stripwords=False, max_edit_dist=1, build_concordances=True, render=False):
 
         import codecs
         import json
@@ -184,11 +193,12 @@ class NERlinker:
             output = {}
 
             for i in range(0, len(self.data)):
+                
                 entry_id = int(self.data.iloc[i].id)
 
                 print("------------------------------")
-                print(f"Starting entry {entry_id} ({i}/{len(self.data)})")
-                print(self.data.iloc[i].pub, self.data.iloc[i].date, "\n")
+                print(f"Starting entry {entry_id} ({i+1}/{len(self.data)})")
+                print(self.data.iloc[i].pub, self.data.iloc[i].date,)
                 print("------------------------------")
 
                 # create doc
@@ -197,21 +207,32 @@ class NERlinker:
 
                 entry_locations = {}
 
-                # build concordance
-                for concordance in self.build_concordances(
-                    doc,
-                    entdist=entdist,
-                    entlabel="WEA",
-                    window_before=window_before,
-                    window_after=window_after,
-                    render=render,
-                ):
+                if build_concordances == True:
 
-                    loc_names = self.get_loc_names(concordance)
+                    # build concordance
+                    for concordance in self.build_concordances(
+                        doc,
+                        entdist=entdist,
+                        entlabel="WEA",
+                        window_before=window_before,
+                        window_after=window_after,
+                        render=render,
+                    ):
 
-                    if loc_names:
-                        for name in loc_names:
-                            entry_locations[name] = self.get_location_id(name)
+                        loc_names = self.get_loc_names(concordance, maxdist=max_edit_dist, stripwords=stripwords)
+
+                        if loc_names:
+                            for name in loc_names:
+                                entry_locations[name] = self.get_location_id(name)
+
+                else:
+
+                        loc_names = self.get_loc_names(doc, maxdist=max_edit_dist, stripwords=stripwords)
+
+                        if loc_names:
+                            for name in loc_names:
+                                entry_locations[name] = self.get_location_id(name)
+
 
                 entry_data = {entry_id: entry_locations}
                 print(entry_data, "\n\n")

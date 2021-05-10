@@ -58,17 +58,11 @@ def pandas_to_doccano(df, nlp, output_path):
     print('File created!')
 
 
-def doccano_to_spacy(output_path):
+def doccano_to_spacy(output_path, labels_dico):
 
     output_data = []
 
-    labels_dico = {17: 'DAT',
-                   12: 'LOC',
-                   16: 'WEA',
-                   18: 'MEA',
-                   13: 'MISC',
-                   15: 'PER',
-                   14: 'ORG'}
+    labels_dico = labels_dico
 
     with codecs.open(output_path, "r", encoding='utf8') as f:
         lines = f.readlines()
