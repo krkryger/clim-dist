@@ -58,13 +58,33 @@ def pandas_to_doccano(df, nlp, output_path):
     print('File created!')
 
 
-def doccano_to_spacy(output_path, labels_dico):
+def create_ents_dico(doccano_data):
+        
+    ents_dico = {}
+    
+    for entry in doccano_data:
+        entset = set([annotation['label'] for annotation in entry['annotations']])
+        for entlabel in entset:
+            if entlabel not in ents_dico.keys():
+                for annotation in entry['annotations']:
+                    if annotation['label'] == entlabel:
+                        print(entry['text'][annotation['start_offset']:annotation['end_offset']])
+                newlabel = input('label: ')
+                ents_dico[entlabel] = newlabel
+                print('\n')
+                
+    print(ents_dico)
+    return ents_dico
+
+
+
+def doccano_to_spacy(input_path, labels_dico):
 
     output_data = []
 
     labels_dico = labels_dico
 
-    with codecs.open(output_path, "r", encoding='utf8') as f:
+    with codecs.open(input_path, "r", encoding='utf8') as f:
         lines = f.readlines()
 
         for line in lines:

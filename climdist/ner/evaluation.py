@@ -1,162 +1,125 @@
-import pandas as pd
-import spacy
-from spacy import displacy
-import numpy as np
-
-from climdist.ocr.spellcorrection import spelling_correction
-
-def generate_ocr_testbatch(input, batchsize, maxlen=None, maxwords=None):
+def evaluate_ner(pred, gold):
     
-    if type(input) == pd.core.frame.DataFrame:
-        df = input
-    else:
-        try:
-            print('Loading data from', input)
-            df = pd.read_excel(input)
-        except:
-            print('Please provide a valid path or a dataframe object')
+    '''Inputs are a Spacy NLP object and a gold standard annotation.
+    Returns two a tuple of two lists of booleans, first for gold standards, second for predictions.
+    Lists can later be compared with Scikit-learn.confusion_matrix to get TP, FP, TN, FN scores.'''
     
-    if maxlen != None:
-        data = df[df.text_len <= maxlen]
-    elif maxwords != None:
-        data = df[df.w_count <= maxwords]
-    else:
-        raise KeyError("Must provide either maxlen or maxwords")
-    
-    print('Randomizing...')
-    result = data.iloc[np.random.randint(0, high=len(data), size=batchsize)]
-    print('Finished!')
-    return result
-
-from climdist.ocr.spellcorrection import spelling_correction
-
-def evaluate_spelling_for_ner(data, nlp_model, speller=None):
-    
-    displacy_color_code = {'WEA': '#4cafd9',
-                  'PER': '#ffb366',
-                  'DAT': '#bf80ff',
-                  'LOC': '#a88676',
-                  'MISC': 'grey',
-                  'MEA': '#85e085',
-                  'ORG': '#5353c6'}
-
-    displacy_options = {'ents': ['WEA', 'PER', 'DAT', 'LOC', 'MISC', 'MEA', 'ORG'], 'colors': displacy_color_code}
-
-    evaluation_results = {}
-    ent_labels = nlp_model.get_pipe("ner").labels
-    
-    for entry in range(0, len(data)):
+    # dico for converting NE types from integer to string (ex. 385 to 'LOC')
+    types_labels = {0:0}
+    for ent in pred.ents:
+        types_labels[ent.label] = ent.label_
         
-        text = data.iloc[entry].full_text.replace('\n', ' ')
-        href = data.iloc[entry].href
-        index = data.index[entry]
-
-        if speller:
-            text = spelling_correction(text,speller)
-            
-        print(f'Starting entry {index}: {data.iloc[entry].pub}, {data.iloc[entry].date}')
-        print(href)
-            
-        doc = nlp_model(text)
-        wordcount = len(doc)
-        doc_labels = [ent.label_ for ent in doc.ents]
-        entry_results = {}
-            
-        for label in ent_labels:
-
-            displacy.render(doc, style='ent', jupyter=True, options=displacy_options)
-            
-            if label in set(doc_labels):
-
-                label_positives = doc_labels.count(label)
+    # the spacy prediction is tokenised, unlike the gold standard annotation.
+    pred_tokens = []
+    pred_entities = []
+    pred_positions = []
+    
+    # loop over these tokens to get their positions in the doc and their entity types
+    for token in pred:
+        pred_tokens.append(token)
+        pred_entities.append(types_labels[token.ent_type])
+        pred_positions.append((token.idx,token.idx + len(token)))
         
-                print(label)
-                while True:
-                    try:
-                        TP = int(input('True Positives: '))
-                    except ValueError:
-                        print("Sorry, I didn't understand that.")
-                        continue
-                    else:         
-                        break
-                
-                FP = label_positives - TP
-                print(f'False Positives: {FP}')
+    #print(list(zip(pred_tokens,pred_entities,pred_positions)))
 
-            else:
-                TP = 0
-                FP = 0
-
-            print(label)
-            while True:
-                try:
-                    FN = int(input('False Negatives: '))
-                except ValueError:
-                    print("Sorry, I didn't understand that.")
-                    continue
-                else:
-                    break
+    # slice the gold standard text using the token positions from the prediction
+    gold_tokens = []  
+    for pos in pred_positions:
+        gold_tokens.append(gold['text'][pos[0]:pos[1]])
+    
+    # create a set of all unique entity categories in the gold standard
+    entity_set = []
+    for ent in gold['entities']:
+        if ent[2] not in entity_set:
+            entity_set.append(ent[2])
+     
+    # this creates a dico from the gold standard that has all the character positions
+    # that contain a given entity type. It basically maps the areas of the
+    # gold standard text where each entity is present
+    gold_entity_ranges = {}
+    
+    for ent in entity_set:
+        entpos = []
+        for entity in gold['entities']:
+            if entity[2] == ent:
+                entpos += (list(range(entity[0], entity[1])))
+        gold_entity_ranges[ent] = entpos
             
-            TN = wordcount - FN - TP
-            print(f'True Negatives: {TN}')
-
-            label_results = [TP,FP,TN,FN]
-            print(label, label_results)
-
-            entry_results[label] = label_results
-        print(entry, entry_results)
+            
+    # this creates a list for all of the tokens in the prediction. if the token is not in the range of
+    # any entity (cf last variable, gold_entity_ranges), the loop appends the label of the token,
+    # otherwise, it appends 0
+    gold_entities = []
+    
+    for pos in pred_positions:
+        isentity = False
+        for label in entity_set:
+            if set(range(pos[0], pos[1])) & set(gold_entity_ranges[label]):
+                isentity = True
+                gold_entities.append(label)
+                break
+        if not isentity:
+            gold_entities.append(0)
+            
+    #print(gold_entities)
         
-        evaluation_results[index] = entry_results     
+    # finally we can create two boolean lists that describe the gold standards and the predictions
+    # on a token level for all the entities. for each label, there will be a boolean list "label_gold"
+    # that has the length of tokens in the doc. for each token, the list has 1 if the entity in question is
+    # present and 0 otherwise.
+    # the second list 'label_pred' does the same, but this time with the prediciton. the point is to make
+    # the predictions comparable for each label: if the two lists, label_gold and label_pred are identical
+    # for a label, your model got all the entities right in that category. if label_gold has more, your model
+    # missed some, and vice-versa
+    
+    results = {}
+    
+    for label in entity_set:
+        label_gold = [1 if ent==label else 0 for ent in gold_entities]
+        label_pred = [1 if ent==label else 0 for ent in pred_entities]
+        
+        results[label] = (label_gold, label_pred)
+        
+    return results
+
+
+def evaluation_results(predictions, gold_data, allowed_labels, output_dir=None, cmap='viridis'): 
+    
+    from sklearn.metrics import confusion_matrix
+    from sklearn.metrics import ConfusionMatrixDisplay
+    
+    total_gold = []
+    total_pred = []
+    
+    for prediction, annotation in zip(predictions, gold_data): # get all your stuff into to lists!
+        
+        eval_scores = evaluate_ner(prediction, annotation)
+        
+        for label in list(eval_scores.keys()):
+            if label in allowed_labels:
+                total_gold += eval_scores[label][0]
+                total_pred += eval_scores[label][1]
             
-    print(evaluation_results)
-    return(evaluation_results)
-
-
-def get_precision_recall(evaluation_results, labels=None):
-
-    if labels == None:
-        labels = ['WEA', 'LOC', 'DAT', 'PER', 'MISC', 'ORG', 'MEA']
-
-    tp = 0
-    fp = 0
-    tn = 0
-    fn = 0
-
-    for entry in evaluation_results:
-        results = evaluation_results[entry]
-        for label in results.keys():
-            if label in labels:
-                scores = results[label]
-                tp += scores[0]
-                fp += scores[1]
-                tn += scores[2]
-                fn += scores[3]
-
+    matrix = confusion_matrix(total_gold, total_pred)
+    print(matrix)
+    
+    tn, fp, fn, tp = matrix.ravel()
+    #print(tn, fp, fn, tp)
+    
+    print(allowed_labels)
+    
     precision = tp/(tp+fp)
     recall = tp/(tp+fn)
-
-    print(tp, 'true positives')
-    print(fp, 'false positives')
-    print(tn, 'true negatives')
-    print(fn, 'false negatives')
+    f_score = 2 / ((recall**-1) + (precision)**-1)
+    
+    print(f'precision: {precision}, recall: {recall}, f-score: {f_score}')
     print('\n')
     
-    print(f'From {len(evaluation_results)} entries, for labels {labels}: precision: {precision}, recall: {recall}')
+    cmplot = ConfusionMatrixDisplay(matrix)
+    cmplot.plot()
+    cmplot.ax_.set(title='  '.join([label for label in allowed_labels]))
+    cmplot.im_.set_cmap(cmap)
     
-    return (precision, recall)
-
-
-def get_fscore(precisionrecall):
-
-    precision = precisionrecall[0]
-    recall = precisionrecall[1]
-
-    f = 2 / ((recall**-1) + (precision)**-1)
-
-    return f
-
-
-
-
-
-
+    if output_dir:
+        plotname = '_'.join([label for label in allowed_labels])
+        cmplot.figure_.savefig(output_dir + 'cm_' + plotname + '.png', bbox_inches='tight')
