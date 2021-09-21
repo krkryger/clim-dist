@@ -9,4 +9,6 @@ temp/
 
 references/*
 
+streamlit/
+
 !references/M1_workflow_chart.png
