@@ -11,4 +11,6 @@ references/*
 
 streamlit/
 
+archive_m1/
+
 !references/M1_workflow_chart.png
