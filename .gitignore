@@ -13,4 +13,6 @@ streamlit/
 
 archive_m1/
 
+v_env/
+
 !references/M1_workflow_chart.png
