@@ -1,5 +1,3 @@
-import numpy as np
+from climdist.data_preprocess import create_sample_df
 
-print(np.random.randint(100))
-
-print('Hello world!')
+create_sample_df()

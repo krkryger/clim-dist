@@ -173,6 +173,20 @@ def complete_data_preprocess():
     print('Data preprocessing finished')
 
 
+def create_sample_df():
+
+    df = pd.read_parquet('../data/processed/RZ_processed.parquet')
+    df['readability'] = pd.read_parquet('../data/processed/RZ_readability.parquet')
+    df['heading2'] = pd.read_parquet('../data/processed/RZ_heading2.parquet')
+
+    sample_df = df[df.readability == 1].sample(10000)
+
+    sample_df.to_parquet('../data/processed/RZ_sample.parquet')
+
+    print('Sample ready!')
+
+
+
 #if __name__ == "__main__":
 #
 #   complete_data_preprocess()

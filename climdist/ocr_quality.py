@@ -69,33 +69,18 @@ class OCR_predict:
         return result
 
 
-    def create_ocr_column(self, df, path):
+# if __name__ == '__main__':
 
-        from tqdm import tqdm
+#     import pandas as pd
+#     import spacy
 
-        readable = []
+#     # load default spacy model
+#     print('Loading spacy')
+#     nlp = spacy.load('de_core_news_md')
 
-        for i in tqdm(df.index, mininterval=5, maxinterval=30, colour='green'):
-            text = df.loc[i, 'full_text']
-            readable.append(self.predict(text))
-        
-        column = pd.DataFrame(data=readable, index=df.index, columns=['readable'])
-        column.to_parquet(path, index=True)
-        print('Finished')
+#     print('Loading dataframe')
+#     df = pd.read_parquet('../data/processed/RZ_processed.parquet')
 
+#     ocr = OCR_predict(nlp)
 
-if __name__ == '__main__':
-
-    import pandas as pd
-    import spacy
-
-    # load default spacy model
-    print('Loading spacy')
-    nlp = spacy.load('de_core_news_md')
-
-    print('Loading dataframe')
-    df = pd.read_parquet('../data/processed/RZ_processed.parquet')
-
-    ocr = OCR_predict(nlp)
-
-    ocr.create_ocr_column(df, '../data/processed/OCR_readability_column_beta.parquet')
+#     ocr.create_ocr_column(df, '../data/processed/OCR_readability_column_beta.parquet')
