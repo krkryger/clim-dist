@@ -39,7 +39,7 @@ class Transformer:
                     for annotation in entry['annotations']:
                         if annotation['label'] == entlabel:
                             print(entry['text'][annotation['start_offset']:annotation['end_offset']])
-                    newlabel = input('label: ')
+                    newlabel = input('Specify the label for this type of entity: ')
                     ents_dico[entlabel] = newlabel
                     print('\n')
                     
@@ -64,9 +64,9 @@ class Transformer:
             if len(entry['annotations']) > 0:
                 entities = []
                 for annotation in entry['annotations']:
-                    entity = (annotation["start_offset"],
+                    entity = [annotation["start_offset"],
                             annotation["end_offset"],
-                            labels_dico[annotation["label"]])
+                            labels_dico[annotation["label"]]]
                     entities.append(entity)
 
             output_data.append([entry['text'], {"entities": entities}])
