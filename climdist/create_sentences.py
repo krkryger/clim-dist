@@ -73,8 +73,11 @@ if __name__ == '__main__':
         for f in concurrent.futures.as_completed(results):
             all_articles += f.result()
             
-    with open('C:/Users/krister/clim-dist/pipeline/RZ_sentences_test.json', 'w', encoding='utf8') as f:
-        json.dump(all_articles, f)
+    with open('C:/Users/krister/clim-dist/pipeline/rz_sentences.jsonl', 'w', encoding='utf8') as f:
+        for text in all_articles:
+            json_string = json.dumps(text)
+            f.write(json_string)
+            f.write('\n')
             
 
     stop = time.perf_counter()
