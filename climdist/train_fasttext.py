@@ -15,7 +15,7 @@ start = time.perf_counter()
 
 model = gensim.models.FastText(vector_size=100,
                                 min_count=10,
-                                workers=multiprocessing.cpu_count)
+                                workers=multiprocessing.cpu_count())
 
 stop = time.perf_counter()
 print(f'Finished in {round(stop-start)} seconds')
