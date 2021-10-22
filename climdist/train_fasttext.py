@@ -5,9 +5,9 @@ import time
 import multiprocessing
 
 _sentences = str(sys.argv[1])
-_vector_size = sys.argv[2]
-_min_count = sys.argv[3]
-_epochs = sys.argv[4]
+_vector_size = int(sys.argv[2])
+_min_count = int(sys.argv[3])
+_epochs = int(sys.argv[4])
 
 class MyCorpus:
     """An iterator that yields sentences from the corpus"""
@@ -16,16 +16,18 @@ class MyCorpus:
         for line in open(_sentences, 'r', encoding='utf8'):
             yield json.loads(line)
 
-print('Training Word2Vec')
+
 start = time.perf_counter()
 
 model = gensim.models.FastText(vector_size=_vector_size,
                                 min_count=_min_count,
                                 workers=multiprocessing.cpu_count())
 
+print('Building vocab')
 model.build_vocab(corpus_iterable=MyCorpus())
 total_examples = model.corpus_count
 
+print('Training FastText')
 model.train(corpus_iterable=MyCorpus(),
             total_examples=total_examples,
             epochs=_epochs)
