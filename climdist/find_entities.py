@@ -24,14 +24,15 @@ def split_df(a, n):
 
 def find_entities(ix_range, df=df, nlp=nlp):
    
-    results = {}
+    results = []
 
     for ix in tqdm(ix_range, mininterval=3):
         text = df.loc[ix, 'full_text']
+        date = df.loc[ix, 'date']
         doc = nlp(text)
         entities = [(ent.text, ent.start_char, ent.end_char, ent.label_)
-                    for ent in doc.ents]  
-        results[ix] = entities
+                    for ent in doc.ents]
+        results.append({'id': ix, 'date': date, 'ents': entities}) 
         
     return results
 
@@ -42,19 +43,19 @@ if __name__ == '__main__':
     start = time.perf_counter()
     cpu_count = multiprocessing.cpu_count()
 
-    final_dict = {}
+    final_list = []
     
     print('Processing')
     with concurrent.futures.ProcessPoolExecutor(max_workers=cpu_count) as executor:
         slices = list(split_df(df.index, cpu_count))
         results = executor.map(find_entities, slices, repeat(df), repeat(nlp))
 
-    for d in results:
-        final_dict.update(d)
+    for lst in results:
+        final_list += lst
     
 
     with open('../data/processed/entities.json', 'w', encoding='utf8') as f:
-        json.dump(final_dict, f)
+        json.dump(final_list, f)
 
     #final_col = df.entities.to_frame()
     #final_col.to_csv('../temp/test.csv', header=False)
