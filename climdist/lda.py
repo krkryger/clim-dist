@@ -1,3 +1,4 @@
+import sys
 import pandas as pd
 from climdist.data import load as load_df
 import json
@@ -5,8 +6,11 @@ import gensim
 from gensim.test.utils import datapath
 from tqdm import tqdm
 import spacy
+import multiprocessing
 
+lim = int(sys.argv[1])
 
+print('Loading df')
 df = load_df('main', readability=True, heading2=False)
 
 with open('../data/processed/entities_ruled.json', 'r', encoding='utf8') as f:
@@ -99,33 +103,45 @@ def create_docs(df, ents, stopwords):
     return docs
 
 
+print('Preparing stopwords')
 with open('../pipeline/stopwords.json', 'r', encoding='utf8') as f:
     corpus_stopwords = json.load(f)
     
 blank_de = spacy.blank('de')
 default_stopwords = list(blank_de.Defaults.stop_words)
-stopwords = default_stopwords + corpus_stopwords
+
+ey_words = []
+for word in default_stopwords:
+    if 'ei' in word:
+        ey_words.append(word.replace('ei', 'ey'))
+
+stopwords = default_stopwords + corpus_stopwords + ey_words
+
+
 
 print('Building corpus')
-texts = create_docs(df, ents_ruled, stopwords)
-dictionary = gensim.corpora.Dictionary(texts)
-corpus = [dictionary.doc2bow(text) for text in texts]
+texts = create_docs(df, ents_ruled[:1000], stopwords)
+dictionary = gensim.corpora.Dictionary(texts[:lim])
+corpus = [dictionary.doc2bow(text) for text in texts[:lim]]
 
-print('Building model with 20 topics')
-lda_model = gensim.models.ldamodel.LdaModel(corpus=corpus,
-                                           id2word=dictionary,
-                                           num_topics=20, 
-                                           random_state=100,
-                                           update_every=1,
-                                           chunksize=100,
-                                           passes=10,
-                                           alpha='auto',
-                                           per_word_topics=True)
+if __name__ == '__main__':
+
+    print('Building model with 20 topics')
+    lda_model = gensim.models.LdaMulticore(corpus=corpus,
+                                            id2word=dictionary,
+                                            num_topics=20, 
+                                            random_state=100,
+                                            chunksize=100,
+                                            passes=10,
+                                            workers=83
+
+                                            #workers=multiprocessing.cpu_count()
+                                            )
 
 
-print('Saving model')
-temp_file = datapath('../data/models/lda_310121')
-lda_model.save(temp_file)
+    print('Saving model')
+    lda_model.save('../data/models/test_lda/lda.model')
 
-print('Finished')
+
+    print('Finished')
 
