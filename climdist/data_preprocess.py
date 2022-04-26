@@ -102,7 +102,7 @@ def normalize_headings(df):
 
 
 def generate_alt_headings(df, ignorelocs, nlp,
-                          output_path):
+                          output_path=None):
 
     """Input: main df with normalized headings. Use a trained NLP model for detecting LOC entities in headings.
         Output: column with alternate headings for simpler geographical analysis.
@@ -114,7 +114,7 @@ def generate_alt_headings(df, ignorelocs, nlp,
         title = df.loc[i, 'heading2']
         doc = nlp(title)
         locs = [ent.text for ent in doc.ents if ent.label_ == 'LOC']
-        if len(locs) == 1:
+        if len(locs) == 1: # add 2nd condition: if starts with loc!
             if locs[0] not in ignorelocs:
                 df.loc[i, 'heading2'] = locs[0]
 
