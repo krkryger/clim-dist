@@ -1,85 +1,86 @@
 #print('Importing modules')
 
+from turtle import pu
 import pandas as pd
 import spacy
-import time
-import concurrent.futures
-import multiprocessing
 import json
 from tqdm import tqdm
 import string
+from climdist.data import load
+import sys
+import time
 
-#print('Loading spacy model')
-nlp = spacy.load('de_core_news_md')
-
-
-def token_is_garbage(token, treshold=0.3):
+def is_garbage(token, treshold=0.3):
+    """Test if a token "is garbage", i.e. if it contains too many weird symbols"""
     
-    allowed_symbols = string.ascii_letters + '0123456789.äüö'
+    allowed_symbols = string.ascii_letters + 'äüöß'
+
+    if len(token) == 0:
+        return True
     
     non_alphabetical = 0
-    for symbol in token.text:
+    for symbol in token:
         if symbol not in allowed_symbols:
             non_alphabetical += 1
             
-    if non_alphabetical/len(token.text) >= treshold:
+    if non_alphabetical/len(token) >= treshold:
         return True
     else:
         return False
 
 
-def create_sentences_for_vec(df):
+def create_sentences_for_vec(df, stopwords, min_len=4):
+    """Parse the main dataframe into lists if lowercase tokens,
+    leaving out stopwords, garbage tokens and words with len < 4 (default value)"""
 
     articles_as_lists = []
+    
+    for ix, row in tqdm(df.iterrows()):
+        tokens = row.full_text.split()
+        cleaned = []
 
-    for i in tqdm(df.index):
-        text = df.loc[i, 'full_text']
-        doc = nlp(text)
-        word_list = []
+        for token in tokens:
+            wordform = token.lower().strip(string.punctuation).lstrip(string.punctuation)
+            if not is_garbage(wordform) and len(wordform) >= min_len and wordform not in stopwords:
+                cleaned.append(wordform)
 
-        for token in doc:
-            if not token.is_stop and token.pos_ not in ['PUNCT', 'SPACE', 'NUM']:
-                if token_is_garbage(token) == False:
-                    word_list.append(token.text)
-
-        articles_as_lists.append(word_list)
-
+        line = {ix: cleaned}
+        articles_as_lists.append(line)
+        
     return articles_as_lists
 
 
-def divide_df(df, n):
-    
-    part_len = round(len(df)/n)
-    
-    for i in range(n):
-        yield df.iloc[i*part_len:(i+1)*part_len] 
+# def divide_df(df, n):
+#     """Split the df for multiprocessing"""
+#     part_len = round(len(df)/n) 
+#     for i in range(n):
+#         yield df.iloc[i*part_len:(i+1)*part_len] 
 
 
 if __name__ == '__main__':
     
     print(f'Starting main')
+
+    savepath = sys.argv[1]  # must be .jsonl format
+    timerange = range(int(sys.argv[2]), int(sys.argv[3])) # for diachronic embeddings
+
     start = time.perf_counter()
-    cpu_count = multiprocessing.cpu_count()
-    all_articles = []
 
     #print('Importing df')
-    df = pd.read_parquet('C:/Users/krister/clim-dist/data/processed/RZ_sample.parquet')
+    df = load('main', heading2=False, readability=True)
+    df = df[(df.readability==True) & (df.year.isin(timerange))]
+    nlp = spacy.load('de_core_news_md')
+    stopwords = nlp.Defaults.stop_words
     
-    print('Processing')
-    with concurrent.futures.ProcessPoolExecutor(max_workers=cpu_count) as executor:
-        frames = list(divide_df(df, cpu_count))
-        results = [executor.submit(create_sentences_for_vec, df) for df in frames]
-
-        for f in concurrent.futures.as_completed(results):
-            all_articles += f.result()
+    string.punctuation += '„”»«™'
+    all_articles = create_sentences_for_vec(df, stopwords)
             
-    with open('C:/Users/krister/clim-dist/pipeline/rz_sentences.jsonl', 'w', encoding='utf8') as f:
+    with open(savepath, 'w', encoding='utf8') as f:
         for text in all_articles:
             json_string = json.dumps(text)
             f.write(json_string)
             f.write('\n')
-            
-
+        
     stop = time.perf_counter()
 
     print(f'Finished in {round(stop-start, 2)} seconds')
