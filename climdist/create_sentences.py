@@ -1,13 +1,14 @@
 #print('Importing modules')
 
-from turtle import pu
 import pandas as pd
 import spacy
+import gensim
 import json
 from tqdm import tqdm
 import string
 from climdist.data import load
 import sys
+import os
 import time
 
 def is_garbage(token, treshold=0.3):
@@ -29,7 +30,7 @@ def is_garbage(token, treshold=0.3):
         return False
 
 
-def create_sentences_for_vec(df, stopwords, min_len=4):
+def create_sentences_for_vec(df, bigram_model, stopwords, min_len=4):
     """Parse the main dataframe into lists if lowercase tokens,
     leaving out stopwords, garbage tokens and words with len < 4 (default value)"""
 
@@ -44,7 +45,7 @@ def create_sentences_for_vec(df, stopwords, min_len=4):
             if not is_garbage(wordform) and len(wordform) >= min_len and wordform not in stopwords:
                 cleaned.append(wordform)
 
-        line = {ix: cleaned}
+        line = {'id': ix, 'text': bigram_model[cleaned]}
         articles_as_lists.append(line)
         
     return articles_as_lists
@@ -63,17 +64,24 @@ if __name__ == '__main__':
 
     savepath = sys.argv[1]  # must be .jsonl format
     timerange = range(int(sys.argv[2]), int(sys.argv[3])) # for diachronic embeddings
+    bigram_path = sys.argv[4]
+
+    if not os.path.exists('/'.join(savepath.split('/')[:-1])):
+        sys.exit(f'Savepath {savepath} does not exist!')
 
     start = time.perf_counter()
 
     #print('Importing df')
     df = load('main', heading2=False, readability=True)
     df = df[(df.readability==True) & (df.year.isin(timerange))]
+    bigram_model = gensim.models.phrases.Phrases.load(bigram_path)
     nlp = spacy.load('de_core_news_md')
     stopwords = nlp.Defaults.stop_words
+    stopwords.update({'find', 'fich', 'von', 'vom', 'den', 'des', 'der', 'die', 'das', 'zu', 'ein',
+                      'eine', 'einem', 'eines', 'nach', 'ohne', 'in'})
     
     string.punctuation += '„”»«™'
-    all_articles = create_sentences_for_vec(df, stopwords)
+    all_articles = create_sentences_for_vec(df, bigram_model, stopwords)
             
     with open(savepath, 'w', encoding='utf8') as f:
         for text in all_articles:
