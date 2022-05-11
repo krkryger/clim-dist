@@ -8,15 +8,20 @@ import time
 import multiprocessing
 from tqdm import tqdm
 
+# TRAINING:
+# word2vec_early_270422 trained with:
+"""python train_word2vec.py "../data/models/word2vec_early_270422/keyedvectors.txt" "../data/processed/RZ_sentences.jsonl" 300 10 10 1802 1860 "../data/models/bigram_models/bigrams_20.pkl" """
+# word2vec_early_090522 trained with:
+"""python train_word2vec.py "../data/models/word2vec_early_270422/keyedvectors.txt" "../data/processed/RZ_sentences.jsonl" 300 10 10 1802 1860 "../data/models/bigram_models/bigrams_20.pkl" """
 
 class MyCorpus:
     """An iterator that yields sentences from the corpus"""
     def __iter__(self):
         for line in tqdm(open(_sentences, 'r', encoding='utf8')):
             sentence = json.loads(line)
-            for key, value in sentence.items():
-                if int(key) in indexes: # checks if the line is in the timerange
-                    yield value
+            sent_id = sentence['id']
+            if sent_id in indexes: # checks if the line is in the timerange
+                yield sentence['text']
 
 
 class BigramIterator(): 
@@ -34,7 +39,7 @@ if __name__ == '__main__':
     _min_count = int(sys.argv[4])    # 10
     _epochs = int(sys.argv[5])       # 10
     _timerange = range(int(sys.argv[6]), int(sys.argv[7]))
-    _bigram_path = str(sys.argv[8])
+    _bigram_path = str(sys.argv[8]) # bigram20
 
     if not os.path.exists('/'.join(_savepath.split('/')[:-1])):
         sys.exit(f'Savepath {_savepath} does not exist!')
