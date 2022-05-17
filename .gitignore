@@ -16,8 +16,8 @@ streamlit/
 
 archive/
 
-pileine/ner/
+pipeline/ner/
 
 v_env/
 
-!references/M1_workflow_chart.png
+!references/M2_workflow_chart.png
