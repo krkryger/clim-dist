@@ -44,11 +44,10 @@ def get_places_and_dates(heading):
     """Matches all the headings to a regex pattern that finds placenames
     and dates in a certain common heading format"""
 
-    re_pattern = '(?:Aus |AuS |Vom |Aus dem |(Schreiben aus ))?(?P<placename>(St. )?[A-Z][a-züöä]+)(?:( im )|(, im ))?(?P<gouv>(([A-Za-z][a-züöä]+chen Gou[a-z]+)|(Gou[a-züöä]+ )[A-Z][a-züöä]+)?)?(?:,|, |., |.,)(?:(den )|(vom ))(?P<date>\d{1,2})(?:\.|ten|sten)?'
-
+    re_pattern = '(?:Aus |AuS |Vom |Aus dem |(Schreiben aus ))?(?P<placename>(St. )?[A-Z][a-züöä]+)(?:( im )|(, im ))?(?P<gouv>(([A-Za-z][a-züöä]+chen Gou[a-z]+)|(Gou[a-züöä]+ )[A-Z][a-züöä]+)?)?(?:.|,|.,)?\s*(?:([Dd]en)|([Vv]om)|([Dd]em)|([Dd]er»)|([Dd]er))?\s*(?P<date>\d{1,2})(?:\.|ten|sten)?\s*(?P<date2>\(\d{1,2}\.?\))?\s+(?P<month>([Jj]an)|([Ff]eb)|([Mm][äa]r)|([Aa]pr)|([Mm]ai)|([Jj][un]n)|([Jj][un]l)|([Aa]ug)|([Ss]ept)|([Oo]ct)|([Nn]ov)|([Dd]e[cz]))?'
     match = re.search(re_pattern, heading)
     if match:
-        return match.group('placename'), match.group('gouv'), match.group('date')
+        return match.group('placename'), match.group('date'), match.group('month')
     else:
         return pd.NA
 
@@ -60,12 +59,12 @@ def apply_regex(df):
     patterns_in_headings = [get_places_and_dates(line) for line in df.heading]
     
     placenames = [entry[0] if type(entry) == tuple else entry for entry in patterns_in_headings]
-    #gouvernements = [entry[1] if type(entry) == tuple else entry for entry in patterns_in_headings]
-    dates = [entry[2] if type(entry) == tuple else entry for entry in patterns_in_headings]
+    dates = [entry[1] if type(entry) == tuple else entry for entry in patterns_in_headings]
+    months = [entry[2] if type(entry) == tuple else entry for entry in patterns_in_headings]
     
     df['placename'] = placenames
-    #df['gouvernement'] = gouvernements
     df['origin_date'] = dates
+    df['origin_month'] = months
 
 
 def find_grenze(df):
@@ -123,6 +122,8 @@ def generate_heading2(df):
     df['heading2'] = df['heading2'].str.strip('., ')
     df['heading2'].loc[df.placename.notna()] = df.placename
     df.heading2.replace('Ist zu drucken erlaubt. Im Namen des General-Gouve', 'Ist zu drucken erlaubt...', inplace=True)
+    df.heading2.replace('Petersburg', 'St. Petersburg', inplace=True)
+    ### Add exception for  "Am"
     df = df.fillna(value=np.nan)
 
 
