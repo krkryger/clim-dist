@@ -11,7 +11,7 @@ def get_sentences():
             yield json.loads(line)
 
 
-def build_spans(sentences, keywords, stretch=100, window=20, min_len=3):
+def build_spans(sentences, keywords, stretch, window, min_len):
     """Build concordance spans from tokens around the detected keywords.
     stretch (int): maximum distance (in words) of two keywords from each other before the span is broken into two
     window (int): nb of words included before first and after last keyword in span
@@ -108,10 +108,10 @@ def build_top2vec_corpus(spans):
     return corpus
 
 
-def train_top2vec():
+def train_top2vec(**kwargs):
     
     print('Building corpus')
-    t2v_corpus = build_top2vec_corpus(build_spans(sentences, keywords))
+    t2v_corpus = build_top2vec_corpus(build_spans(sentences, keywords, **kwargs))
     print(f'corpus length: {len(t2v_corpus)}')
 
     print('Training...')
@@ -131,10 +131,15 @@ def train_top2vec():
 if __name__ == '__main__':
 
     span_min_len = int(sys.argv[1])
+    save_path = str(sys.argv[2]) # .pkl
 
     with open('../data/processed/all_keywords_100522.json', 'r', encoding='utf8') as f:
         keywords = json.load(f)
         sentences = list(get_sentences())
+
+    model = train_top2vec(stretch=100, window=20, min_len=span_min_len)
+    model.save(save_path)
+
 
 
 
