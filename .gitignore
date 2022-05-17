@@ -14,7 +14,9 @@ references/*
 
 streamlit/
 
-archive_m1/
+archive/
+
+pileine/ner/
 
 v_env/
 

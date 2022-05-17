@@ -46,7 +46,7 @@ class Analyse():
             self.keywords = json.load(f)
             
         print('Importing auxiliaries')
-        self.ruler = pd.read_excel('../pipeline/ner/ruler_patterns_060522.xlsx', index_col='Unnamed: 0')
+        self.ruler = pd.read_excel('../pipeline/ruler_patterns_060522.xlsx', index_col='Unnamed: 0')
         self.wea_df = pd.read_csv('../data/processed/wea_df_010522.tsv', sep='\t', encoding='utf8', index_col=0)
         self.wordform_df = pd.read_csv('../data/processed/wordform_df_010522.tsv', sep='\t', encoding='utf8', index_col=0)
         self.phenomenon_df = pd.read_csv('../data/processed/phenomenon_df_110522.tsv', sep='\t', encoding='utf8', index_col=0)
