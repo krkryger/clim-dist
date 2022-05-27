@@ -192,9 +192,9 @@ class Analyse():
         wordcloud_data = ' '.join([word for word in context_words])
         
         print(f'Generated from {len(wordcloud_data.split())} context words')
-        wc = WordCloud(background_color='white', width=900, height=300, font_path='../references/cmunrm.ttf')
+        wc = WordCloud(background_color='white', width=4800, height=1600, font_path='../references/cmunrm.ttf')
         wc.generate(wordcloud_data)
-        plt.figure(figsize=(12,4))
+        plt.figure(figsize=(24,8))
         plt.axis('off')
         
         plt.imshow(wc)

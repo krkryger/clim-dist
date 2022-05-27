@@ -130,7 +130,7 @@ def train_top2vec(**kwargs):
 
 if __name__ == '__main__':
 
-    span_min_len = int(sys.argv[1])
+    span_min_len = int(sys.argv[1]) # 3
     save_path = str(sys.argv[2]) # .pkl
 
     with open('../data/processed/all_keywords_100522.json', 'r', encoding='utf8') as f:
