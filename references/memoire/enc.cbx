@@ -1,0 +1,278 @@
+  %% biblatex-enc v.1.0 (17/06/2017)
+  %% enc.cbx
+  %% Copyright 2014 J.B. Camps (jbcamps@hotmail.com)
+  %
+  % This work may be distributed and/or modified under the conditions
+  % of the LaTeX Project Public License, either version 1.3 of this 
+  % license or (at your option) any later version.
+  % The latest version of this license is in
+  %   http://www.latex-project.org/lppl.txt
+  % and version 1.3 or later is part of all distributions of LaTeX
+  % version 2005/12/01 or later.
+  %
+  % This work has the LPPL maintenance status `maintained'.
+  % 
+  % The Current Maintainer of this work is J.B. Camps (jbcamps <at> hotmail.com).
+  %
+  % This work consists of the files enc.cbx and enc.BBX.
+
+\ProvidesFile{enc.cbx}[]
+
+\DeclareBibliographyOption{postnote}{%
+  \ifcsdef{hz@opt@postnote@#1}
+    {\csuse{hz@opt@postnote@#1}}
+    {\PackageError{historische-zeitschrift}
+       {Invalid option 'postnote=#1'\MessageBreak
+        Valid values are 'afterparen', 'inparen'}}}
+
+\def\hz@opt@postnote@afterparen{%
+  \renewbibmacro*{postnote}{%
+    %\ifbool{cbx@seenote}
+      %{\iffieldundef{postnote}
+        %{\printtext{\bibrightparen}}
+        %{\printtext{\bibrightparen}%
+         %\postnotedelim
+         %\printfield{postnote}}}
+      {\iffieldundef{postnote}
+        {}
+        {\postnotedelim
+         \printfield{postnote}}}}}
+
+\def\hz@opt@postnote@inparen{%
+  \renewbibmacro*{postnote}{%
+    \ifbool{cbx@seenote}
+      {\iffieldundef{postnote}
+        {\printtext{\bibrightparen}}
+        {\postnotedelim
+         \printfield{postnote}%
+         \printtext{\bibrightparen}}}
+      {\iffieldundef{postnote}
+        {}
+        {\postnotedelim
+         \printfield{postnote}}}}}
+
+\ExecuteBibliographyOptions{
+  citetracker=context,
+  ibidtracker=context, %changement de constrict (qui en plus de strict, n'utilise ibid que dans des notes immédiatement consécutives) à strict. Voir si on veut le garder. 20/05/2016: changement ultérieur de strict (qui n'utilise pas ibid lorsque la référence précédente consiste en une série de références) à context
+  loccittracker=true, %j'ajoute celui-ci pour, lorsque deux ibid. se suivent, ne préciser les pages que quand elles différent
+  idemtracker=true,
+  singletitle=false,%
+  pagetracker=true,
+  autocite=footnote,
+  postnote=afterparen,
+  uniquename=true
+}
+
+\providecommand*{\mkibid}[1]{#1}
+\newbool{cbx@loccit}
+% to check if a 'see note' phrase is in use:
+\newbool{cbx@seenote}
+
+\DeclareBibliographyOption{ibidpage}[true]{%
+  \ifstrequal{#1}{true}
+    {\ExecuteBibliographyOptions{loccittracker=constrict}}
+    {\ExecuteBibliographyOptions{loccittracker=false}}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%Macro pour l'itération du nom d'auteur
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Option 'nameseen'
+\newcommand*{\cbx@seennames}{}
+\newrobustcmd*{\cbx@nameseen}[1]{%
+  \listcsxadd{cbx@seennames}{#1}}
+\newrobustcmd*{\cbx@ifnameseen}[1]{%
+  \xifinlistcs{#1}{cbx@seennames}}
+
+
+\DeclareNameFormat{citeauthor}{%
+  \cbx@ifnameseen{\thefield{hash}}
+    {}
+    {\setcounter{uniquename}{2}%
+     \cbx@nameseen{\thefield{hash}}}%
+  \ifcase\value{uniquename}%
+    \usebibmacro{name:given-family}
+      {\namepartfamily}
+      {\namepartgiveni}
+      {\namepartprefix}
+      {\namepartsuffix}%
+  \or
+    \ifuseprefix
+      {\usebibmacro{name:given-family}
+        {\namepartfamily}
+        {\namepartgiveni}
+        {\namepartprefix}
+        {\namepartsuffixi}}
+      {\usebibmacro{name:given-family}
+        {\namepartfamily}
+        {\namepartgiveni}
+        {\namepartprefixi}
+        {\namepartsuffixi}}%
+  \or
+    \usebibmacro{name:given-family}
+      {\namepartfamily}
+      {\namepartgiven}
+      {\namepartprefix}
+      {\namepartsuffix}%
+  \fi
+  \usebibmacro{name:andothers}}
+
+%%%%% %%%%% %%%%% %%%%% %%%%% 
+%%%%% Reformatting      %%%%% 
+%%%%% %%%%% %%%%% %%%%% %%%%% 
+
+%\DeclareFieldFormat{citeauthor}{#3\addspace #1}
+\DeclareFieldFormat{citetitle}{#1}
+\DeclareFieldFormat[article]{citetitle}{#1}
+\DeclareFieldFormat[inbook]{citetitle}{#1}
+\DeclareFieldFormat[incollection]{citetitle}{#1}
+\DeclareFieldFormat[inproceedings]{citetitle}{#1}
+\DeclareFieldFormat[patent]{citetitle}{#1}
+\DeclareFieldFormat[thesis]{citetitle}{#1}
+\DeclareFieldFormat[unpublished]{citetitle}{#1}
+
+%%%%% Les titres courts. 
+%Le seul problème avec l'usage des \dots est que biblatex les considère bien comme des points (abréviatifs, si on précise \isdot), et élimine la ponctuation finale, si rien ne suit, et même s'ils figurent dans les guillemets. Cela n'est gênant que pour les titres abrégés d'article, actes, ... entre guillemets, qui sont bels et bien abrégés (pour lesquels les  points de suspensions se trouvent bien dans les guillemets): pour ce cas limite, il faut préciser au /punctuation tracker/ de BibLaTex que la phrase n'est pas finie, avec \midsentence.
+%En outre, il faut ajouter un test pour voir si labeltitle est égal à title, et, dans ce cas, mettre les points à l'extérieur des guillemets pour les articles & co. (fait infra dans la macro footcite:note).
+%There is a particularly annoying difference here between pdflatex and xelatex: with pdflatex, \dots are considered a dot, with XeLaTeX, not. So, we need \midsentence with pdflatex to be correct, but, on the other hand, we get an extra dot with xelatex..
+
+%Fix for fontspec suggested by moewe on Stackexchange, http://tex.stackexchange.com/questions/340478/biblatex-equivalent-to-adddot-or-isdot-for-ellipsis/340612?noredirect=1#340612
+
+\protected\def\blx@imc@forceisdot{\spacefactor\blx@sf@dot}
+\blx@regimcs{\forceisdot}
+
+
+\DeclareFieldFormat{shorttitle}{\textit{#1}\printtext{\dots\forceisdot}}
+\DeclareFieldFormat[article]{shorttitle}{\mkbibquote{#1\printtext{\dots}\forceisdot}\midsentence}
+\DeclareFieldFormat[inbook]{shorttitle}{\mkbibquote{#1\printtext{\dots}\forceisdot}\midsentence}
+\DeclareFieldFormat[incollection]{shorttitle}{\mkbibquote{#1\printtext{\dots}\forceisdot}\midsentence}
+\DeclareFieldFormat[inproceedings]{shorttitle}{\mkbibquote{#1\printtext{\dots}\forceisdot}\midsentence}
+\DeclareFieldFormat[patent]{shorttitle}{\textit{#1}\printtext{\dots}\forceisdot}
+\DeclareFieldFormat[thesis]{shorttitle}{\textit{#1}\printtext{\dots}\forceisdot}
+\DeclareFieldFormat[unpublished]{shorttitle}{\textit{#1}\printtext{\dots}\forceisdot}
+
+\DeclareFieldFormat{postnote}{#1}
+\DeclareFieldFormat{multipostnote}{#1}
+
+
+%%%%% %%%%% %%%%% %%%%% %%%%% 
+%%%%% Cite bibmacros    %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%% 
+
+\newbibmacro*{cite}{%
+  \global\boolfalse{cbx@seenote}% 
+  \iffieldundef{shorthand}
+    {\usedriver
+       {\DeclareNameAlias{sortname}{default}}
+       {\thefield{entrytype}}}
+    {\printfield{shorthand}}}	% 
+
+\newbibmacro*{footcite}{%
+  \global\boolfalse{cbx@loccit}%
+  \global\boolfalse{cbx@seenote}% 
+  \ifciteseen
+    {\iffieldundef{shorthand}
+       {\ifthenelse{\ifciteibid} %\AND\NOT\iffirstonpage} Je retire ce test, pour avoir des ibid. même en référence à une page précédente. À voir
+          {\usebibmacro{footcite:ibid}}
+          {\usebibmacro{footcite:note}}}
+       {\usebibmacro{footcite:shorthand}}}
+    {\usebibmacro{footcite:full}%
+     \usebibmacro{footcite:save}}}
+
+
+\newbibmacro*{footcite:save}{%
+  \ifundef\@thefnmark
+    {\ifundef\@theenmark % endnotes.sty
+       {\csgdef{cbx@note@\thefield{entrykey}}{%
+          \BibliographyWarning{Missing footnote mark}\textbf{??}}}
+       {\global\cslet{cbx@note@\thefield{entrykey}}\@theenmark}}
+    {\global\cslet{cbx@note@\thefield{entrykey}}\@thefnmark}%
+  \csxdef{cbx@first@\thefield{entrykey}}{\the\value{instcount}}}
+
+\newbibmacro*{footcite:full}{%
+  \printtext{%
+    \bibhypertarget{\thefield{entrykey}:\the\value{instcount}}{%
+      \usedriver % appelle le driver du fichier .bbx, cf. doc. p. 190...
+	{\DeclareNameAlias{sortname}{default}}
+	{cite:\thefield{entrytype}}}}%
+  \usebibmacro{shorthandintro}}
+
+\newbibmacro*{footcite:note}{%
+  \global\booltrue{cbx@seenote}%
+  \ifnameundef{labelname}%
+    {\printfield{label}}%
+    {\usebibmacro{author-shortnote}}%
+  \ifsingletitle%Expands to true if there is only one work by the labelname name in the bibliography,
+    {}%
+    {\setunit*{\addcomma\space}%
+    \iffieldundef{shorttitle}%
+    {\printfield[title]{labeltitle}%
+     \printtext{\dots}\forceisdot}%
+    {%
+     \iffieldsequal{title}{shorttitle}{%
+       \printfield[title]{labeltitle}%
+       \printtext{\dots\forceisdot}% 
+     }{%
+       \printfield[shorttitle]{labeltitle}% 
+      }%
+    }%
+  }%
+}
+
+\newbibmacro*{footcite:ibid}{%
+  \printtext{%
+    \bibhyperlink{\thefield{entrykey}:%
+                  \@nameuse{cbx@first@\thefield{entrykey}}}{%
+      \bibstring[\mkibid]{ibidem}}}%
+  \ifloccit
+    {\global\booltrue{cbx@loccit}}
+    {}}
+    
+\newbibmacro*{footcite:shorthand}{%
+  \printtext{%
+    \bibhyperlink{\thefield{entrykey}:%
+                  \@nameuse{cbx@first@\thefield{entrykey}}}{%
+      \printfield{shorthand}}}}
+
+\newbibmacro*{cite:postnote}{%
+  \ifbool{cbx@loccit}
+    {}
+    {\usebibmacro{postnote}}}
+    
+%%%%% %%%%% %%%%% %%%%% %%%%% 
+%%%%% Cite commands     %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%% 
+
+\DeclareCiteCommand{\cite}
+  {\usebibmacro{prenote}}
+  {\usebibmacro{citeindex}%
+   \iffootnote
+     {\usebibmacro{footcite}}
+     {\usebibmacro{cite}}}
+  {\multicitedelim}
+  {\usebibmacro{cite:postnote}}
+  
+\DeclareCiteCommand{\textcite}
+  {\usebibmacro{prenote}}
+  {\usebibmacro{citeindex}%
+  {\usebibmacro{footcite}}}
+  {\multicitedelim}
+  {\usebibmacro{cite:postnote}}
+
+\DeclareCiteCommand{\parencite}[\mkbibparens]
+  {\usebibmacro{prenote}}
+  {\usebibmacro{citeindex}%
+   \iffootnote
+     {\usebibmacro{footcite}}
+     {\usebibmacro{cite}}}
+  {\multicitedelim}
+  {\usebibmacro{cite:postnote}}
+
+\DeclareCiteCommand{\footcite}[\mkbibfootnote]
+  {\bibsentence
+   \usebibmacro{prenote}}
+  {\usebibmacro{citeindex}%
+   \usebibmacro{footcite}}
+  {\multicitedelim}
+  {\usebibmacro{cite:postnote}}
+
+\endinput

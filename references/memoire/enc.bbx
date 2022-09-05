@@ -1,0 +1,1544 @@
+  %% biblatex-enc v.1.0 (17/06/2017)
+  %% enc.bbx
+  %% Copyright 2015 J.B. Camps (jbcamps@hotmail.com)
+  %
+  % This work may be distributed and/or modified under the conditions
+  % of the LaTeX Project Public License, either version 1.3 of this 
+  % license or (at your option) any later version.
+  % The latest version of this license is in
+  %   http://www.latex-project.org/lppl.txt
+  % and version 1.3 or later is part of all distributions of LaTeX
+  % version 2005/12/01 or later.
+  %
+  % This work has the LPPL maintenance status `maintained'.
+  % 
+  % The Current Maintainer of this work is J.B. Camps (jbcamps <at> hotmail.com).
+  %
+  % This work consists of the files enc.cbx and enc.BBX.
+
+
+%TODO déplacer volumes, mention d'édition, etc. après lieu et date.
+%TODO: traiter la récurrence du premier auteur pour les ouvrages collectifs.
+
+\ProvidesFile{enc.bbx}[]
+
+\@ifpackagelater{biblatex}{2016/03/01}
+  {}
+  {\PackageError{biblatex}
+    {Outdated 'biblatex' package}
+    {This style requires biblatex v3.3 or later.\MessageBreak
+     You are using: '\csuse{ver@biblatex.sty}'.\MessageBreak
+     For older version, use a previous release.
+     This is a fatal error. I'm aborting now.}%
+    \endinput}
+
+\ExecuteBibliographyOptions{pagetracker}
+%\ExecuteBibliographyOptions{citetracker}
+%\ExecuteBibliographyOptions{idemtracker}%déjà dans le cbx
+
+\newtoggle{bbx:url}
+\newtoggle{bbx:doi}
+\newtoggle{bbx:eprint}
+\newtoggle{bbx:annotatedBibliography} %new toggle to allow for annotated bibliographies
+
+\DeclareBibliographyOption{url}[true]{%
+  \settoggle{bbx:url}{#1}}
+\DeclareBibliographyOption{doi}[true]{%
+  \settoggle{bbx:doi}{#1}}
+\DeclareBibliographyOption{eprint}[true]{%
+  \settoggle{bbx:eprint}{#1}}
+\DeclareBibliographyOption{annotatedBibliography}[false]{%
+  \settoggle{bbx:annotatedBibliography}{#1}} %false by default
+  
+
+\ExecuteBibliographyOptions{
+  url=true,
+  doi=true,
+  eprint=true
+}
+
+\DeclareBibliographyAlias{reference}{collection} %Attribue un type non couvert à un driver existant (ici, reference est attribué à collection
+\DeclareBibliographyAlias{inreference}{incollection}
+\DeclareBibliographyAlias{mvbook}{book} %le type mvbook (multi-volume book) a été ajouté en 2012. Pour l'instant, nous ne différencions pas dans la mise en forme.
+\DeclareBibliographyAlias{cite:mvbook}{cite:book}
+\DeclareBibliographyAlias{software}{online}
+\DeclareBibliographyAlias{cite:software}{cite:online}
+
+%%%%% %%%%% %%%%% %%%%% %%%%% 
+%%%%% Reformatting      %%%%% 
+%%%%% %%%%% %%%%% %%%%% %%%%% 
+\renewcommand*{\mkbibnamegiven}[1]{#1}
+%\renewcommand*{\mkbibnamefamily}[1]{#1}
+\renewcommand*{\mkbibnameprefix}[1]{#1}
+\renewcommand*{\mkbibnamesuffix}[1]{#1}
+
+% Comme les petites capitales pour le nom de famille font partie de la 
+% définition du style de langue fr., il faut définir l'utilisation du 
+% romain un peu différemmment
+%\savecommand\mkbibnamefamily%on sauvegarde la version avec small caps
+\DefineBibliographyExtras{french}{%
+\renewcommand*{\mkbibnamefamily}[1]{{\hyphenrules{nohyphenation}#1}}%
+}
+
+%Jamais de ponctuation entre les différentes parties d'un nom
+\renewcommand{\bibnamedelima}{\space}
+\renewcommand{\bibnamedelimb}{\space}
+\renewcommand{\bibnamedelimc}{\space}
+\renewcommand{\bibnamedelimd}{\space}
+\renewcommand{\bibinitperiod}{\adddot}% point après les initiales
+\renewcommand{\bibinithyphendelim}{\adddot}% point après les initiales
+
+\renewcommand{\intitlepunct}{\addspace}%séparateur entre in et le titre dans les articles, etc.
+\renewcommand{\newunitpunct}{\addcomma\addspace}%La séparation des différentes parties d'une notice.
+
+%\renewcommand*{\labelnamepunct}{\addcomma\space}% virgule après le premier nom
+%\renewcommand*{\multinamedelim}{\addcomma\space}% virgules entre les noms
+%\renewcommand*{\finalnamedelim}{and}% et avant le
+%\renewcommand*{\multilistdelim}{\adcomma\space}
+% , entre différents lieux d'édition
+%\renewcommand*{\finallistdelim}{et}      % 
+\renewcommand{\andothersdelim}{\addcomma\addspace}%à vérifier dans les normes. Ponctuation avant et. al.
+
+%%%% Les titres
+
+\DeclareFieldFormat{booktitle}{\textit{#1}}
+\DeclareFieldFormat{journaltitle}{\textit{#1}}%
+\DeclareFieldFormat{issuetitle}{\textit{#1}}
+\DeclareFieldFormat{maintitle}{\textit{#1}}
+\DeclareFieldFormat{title}{\textit{#1}}
+\DeclareFieldFormat[article]{title}{\mkbibquote{#1}}
+\DeclareFieldFormat[inbook]{title}{\mkbibquote{#1}}
+\DeclareFieldFormat[incollection]{title}{\mkbibquote{#1}}
+\DeclareFieldFormat[inproceedings]{title}{\mkbibquote{#1}}
+\DeclareFieldFormat[patent]{title}{\textit{#1}}
+\DeclareFieldFormat[thesis]{title}{\textit{#1}}
+\DeclareFieldFormat[unpublished]{title}{\textit{#1}}
+
+%%%% Les annotations
+\DeclareFieldFormat{annotation}{{\footnotesize #1}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%   Passage du français au français ENC  %%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%Définition d'une chaîne différente pour les éditeurs critiques (qui correspond au champ «editortype» de la base bibliographique)
+
+\NewBibliographyString{bycriticaleditor}
+
+\DefineBibliographyStrings{french}{%
+  in               = {dans},
+  idem             = {Id.},
+  idemsm           = {Id.},
+  idemsf           = {Ead.},
+  idemsn           = {Id.},
+  idempm           = {Eid.},
+  idempf           = {Eaed.},
+  idempn           = {Ead.},
+  idempp           = {Eid.},
+  ibidem           = {\textit{Ibid\adddot}},
+  andothers        = {\textit{et\addabbrvspace al\adddot}},
+  january          = {janv\adddot},
+  february         = {f\'evr\adddot},
+  march            = {mars},
+  byeditor         = {dir\adddot},
+  bycriticaleditor = {éd\adddot},
+}
+
+%%%%% %%%%% %%%%% %%%%% %%%%% %%%%% 
+%%%%% Series in parentheses   %%%%% 
+%%%%% %%%%% %%%%% %%%%% %%%%% %%%%% 
+\newbibmacro*{series+number}{%
+ \iffieldundef{series}%
+   {}
+   {\printtext[parens]{%
+    \printfield{series}%
+    \iffieldundef{number}
+      {}  
+      {\setunit{\addcomma\space}%
+       \printfield{number}}%
+}}}
+
+%%%%% %%%%% %%%%% %%%%% %%%%% 
+%%%%% Publisher omitted %%%%%
+%%%%% %%%%% %%%%% %%%%% %%%%% 
+\newbibmacro*{location+year}{%
+  \printlist{location}%
+  \newunit%
+  \printfield{year}%
+  \newunit%
+}
+  
+%%%%% %%%%% %%%%% %%%%% %%%%% %%%%% %%%%% %%%%% %%%%% 
+%%%%% Parenthèses pour l'année d'une revue      %%%%% 
+%%%%% %%%%% %%%%% %%%%% %%%%% %%%%% %%%%% %%%%% %%%%% 
+\newbibmacro*{issue+date}{%
+    \iffieldundef{issue}
+      {\iffieldundef{month}
+         {\printfield{year}}
+         {\iffieldundef{day}
+            {\printfield{month}%
+             \setunit{\addspace}%
+             \printfield{year}}
+            {\printdate}}}
+      {\printfield{issue}%
+       \setunit{\addspace}%
+       \mkbibparens{\printfield{year}}}%
+  \newunit}
+
+\newbibmacro*{journal+issuetitle}{%
+  \usebibmacro{journal}%
+  \newunit%
+  \iffieldundef{series}
+    {}
+    {\newunit%
+     \printfield{series}%
+     \setunit{\addspace}}%
+  \printfield{volume}%
+  \iffieldundef{number}{}{%
+  \setunit{\textendash}%
+  \printfield{number}}%
+  \printfield{eid}%
+  \addspace%
+  \mkbibparens{\usebibmacro{issue+date}}%
+  \newunit%
+  \usebibmacro{issue}%
+  \newunit}
+%%%%% %%%%% %%%%% %%%%% %%%%% %%%%% %%%%% %%%%% %%%%% 
+  
+\DeclareFieldFormat{shorthandwidth}{#1}
+\newcommand*{\thebibitem}{\item}
+\newcommand*{\thelositem}{\item}
+\setlength{\bibitemsep}{0pt}
+
+\renewenvironment*{thebibliography}
+  {\list
+     {}
+     {\setlength{\leftmargin}{\bibhang}%
+      \setlength{\itemindent}{-\leftmargin}%
+      \setlength{\itemsep}{\bibitemsep}%
+      \setlength{\parsep}{\bibparsep}}}
+  {\endlist}
+
+\newenvironment*{theshorthands}
+  {\list
+     {\printfield[shorthandwidth]{shorthand}}
+     {\setlength{\labelwidth}{\shorthandwidth}%
+      \setlength{\leftmargin}{\labelwidth}%
+      \setlength{\labelsep}{\biblabelsep}%
+      \addtolength{\leftmargin}{\labelsep}%
+      \setlength{\itemsep}{\bibitemsep}%
+      \setlength{\parsep}{\bibparsep}%
+      \renewcommand*{\makelabel}[1]{##1\hss}}}
+  {\endlist}
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%déclaration du format de nom applicable à la bibliographie
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\DeclareNameFormat{family-given}{%
+  \ifgiveninits
+    {\usebibmacro{name:family-given}{\namepartfamily}{\namepartgiveni}{\namepartprefix}{\namepartsuffix}}%
+    {\usebibmacro{name:family-given}{\namepartfamily}{\namepartgiven}{\namepartprefix}{\namepartsuffix}}%
+  \usebibmacro{name:andothers}}
+
+\renewbibmacro*{name:family-given}[4]{%
+  \ifuseprefix
+    {\usebibmacro{name:delim}{#3#1}%
+     \usebibmacro{name:hook}{#3#1}%
+     \ifdefvoid{#3}{}{%%
+       \ifcapital
+         {\mkbibnameprefix{\MakeCapital{\textsc{#3}}}\isdot}
+     {\mkbibnameprefix{\textsc{#3}}}%
+       \ifpunctmark{'}{}{\addhighpenspace}}%
+     \mkbibnamefamily{\textsc{#1}}\isdot
+     \ifdefvoid{#4}{}{\addlowpenspace\mkbibnamesuffix{#4}\isdot}%
+     \ifdefvoid{#2}{}{\addlowpenspace\mkbibnamegiven{#2}\isdot}}
+    {\usebibmacro{name:delim}{#1}%
+     \usebibmacro{name:hook}{#1}%
+     \mkbibnamefamily{\textsc{#1}}\isdot 
+     \ifboolexpr{%
+    test {\ifdefvoid{#2}} 
+    and
+    test{\ifdefvoid{#3}}
+    and
+    test{\ifdefvoid{#4}}
+   }{}{
+     \mkbibparens{% ajout des parenthèses autour du prénom
+     \ifdefvoid{#2}{}{\mkbibnamegiven{#2}}%
+     \ifdefvoid{#3}{}{\addlowpenspace\mkbibnameprefix{#3}}
+     \ifdefvoid{#4}{}{\addlowpenspace\mkbibnamesuffix{#4}}\unspace}}
+}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%  Et pour les éditeurs  %%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\renewbibmacro*{author}{%
+  \ifthenelse{\ifuseauthor\AND\NOT\ifnameundef{author}}
+    {\ifthenelse{\iffieldequals{namehash}{\bbx@lasthash}\AND
+                 \NOT\iffirstonpage}
+       {\bibnamedash}
+       {\printnames[family-given][1-10]{author}%entre \printnames et [1-10] on peut mettre un crochet avec une instruction de formatage.
+        \savefield{namehash}{\bbx@lasthash}}}
+    {\global\undef\bbx@lasthash}}
+
+\renewbibmacro*{editor}{%
+  \ifthenelse{\ifuseeditor\AND\NOT\ifnameundef{editor}}
+    {\ifthenelse{\iffieldequals{namehash}{\bbx@lasthash}\AND
+                 \NOT\iffirstonpage}
+       {\bibnamedash}
+       {\printnames{editor}\addspace%
+        \savefield{namehash}{\bbx@lasthash}}%
+     \usebibmacro{editorstrg}%
+     \clearname{editor}}
+    {\global\undef\bbx@lasthash}}
+    
+    
+\renewbibmacro*{byeditor+others}{%
+  \ifnameundef{editor}
+    {}
+    {\usebibmacro{byeditor+othersstrg}%
+     \setunit*{\addspace}%
+     \ifbibliography{%On teste si on est dans une bibliographie, car dans ce cas on veut le nom complet, sinon, on veut le même comportement que pour les noms d'auteurs (prénom abrégé à partir de la 2e occurrence
+     	\printnames[byeditor]{editor}%
+      }{%
+      	\printnames[citeauthor][1-10]{editor}%Je précise 1-10, pour qu'à la première occurrence on ait tous les éditeurs, mais c'est un peu un hack, car cela repose sur le fait que l'on ne mentionne, dans la version actuelle du style, les éditeurs que dans la première note complète. Une solution plus propre serait de procéder comme pour les auteurs, en différenciant editor-fullnote et editor-shortnote
+      }
+     \savefield{namehash}{\cbx@lasthash}
+     \clearname{editor}% 
+     \setunit*{\addcomma\addspace}
+     \newunit}%
+  \usebibmacro{byeditorx}%
+  \usebibmacro{bytranslator+others}}    
+    
+    
+    \renewbibmacro*{editorstrg}{%
+  \ifthenelse{\value{editor}>1\OR\ifandothers{editor}}
+    {\mkbibparens{\bibstring{editors}}}
+    {\mkbibparens{\bibstring{editor}}}}
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%Définition du format pour les noms d'auteurs pour les citations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newbibmacro*{author-fullnote}{%
+  \ifthenelse{\ifuseauthor\AND\NOT\ifnameundef{author}}%
+    {\ifthenelse{\iffieldequals{namehash}{\cbx@lasthash}}%
+       {\bibstring{idem\thefield{gender}},}%
+       {\printnames[citeauthor][1-10]{author}%        
+        \savefield{namehash}{\cbx@lasthash}
+        %\savefield{fullhash}{\cbx@thefield{fullhash}}}{\printnames{labelname}}
+      }}%
+    {\global\undef\cbx@lasthash}}
+    
+\newbibmacro*{author-shortnote}{%On est obligés d'en faire deux, pour avoir un et. al. différent
+  \ifthenelse{\ifuseauthor\AND\NOT\ifnameundef{author}}%
+    {\ifthenelse{\iffieldequals{namehash}{\cbx@lasthash}}%
+       {\bibstring{idem\thefield{gender}},}%
+       {\printnames[citeauthor][1-3]{author}%  
+        \savefield{namehash}{\cbx@lasthash}
+        %\savefield{fullhash}{\cbx@thefield{fullhash}}}{\printnames{labelname}}
+      }}%
+    {\global\undef\cbx@lasthash}}
+
+\newbibmacro*{name:given-family-upshape}[4]{%
+  \usebibmacro{name:delim}{#2#3#1}%
+  \ifdefvoid{#2}{}{#2\addlowpenspace}%
+  \ifdefvoid{#3}{}{%
+    #3
+    \ifpunctmark{'}
+      {}
+      {\ifuseprefix{\addhighpenspace}{\addlowpenspace}}}%
+  #1
+  \ifdefvoid{#4}{}{\addlowpenspace#4\addcomma}}
+
+\newbibmacro*{author-fullnote/editor}{%
+  \ifboolexpr{
+    test \ifuseauthor
+    and
+    not test {\ifnameundef{author}}
+  }
+    {\usebibmacro{author-fullnote}}
+    {\usebibmacro{editor}}}
+
+%%%%% %%%%% %%%%% %%%%% %%%%% %%%%% %%%%% 
+%%%%% Editor in @incollection and   %%%%% 
+%%%%% @inproceedings not in italics %%%%% 
+%%%%% %%%%% %%%%% %%%%% %%%%% %%%%% %%%%% 
+
+\renewbibmacro*{bybookauthor}{%
+	\ifnamesequal{author}{bookauthor}%
+	{}%
+	{\printnames{bookauthor}\setunit*{\newunitpunct}}}%On est obligés de mettre la ponctuation ici, pour éviter une virgule surnuméraire après "in"
+
+\newbibmacro*{editorincoll}{%
+  \ifthenelse{\ifuseeditor\AND\NOT\ifnameundef{editor}}
+    {\ifthenelse{\iffieldequals{author}{editor}\AND
+                 \NOT\iffirstonpage}
+       {\bibnamedash}
+       {\printnames[upshape][1-10]{editor}\addspace
+        \savefield{namehash}{\bbx@lasthash}}%
+     \usebibmacro{editorstrg}%
+     \clearname{editor}}
+    {\global\undef\bbx@lasthash}}
+
+\newbibmacro*{maintitle+title}{%
+  \iffieldsequal{maintitle}{title}
+    {\clearfield{maintitle}%
+     \clearfield{mainsubtitle}%
+     \clearfield{maintitleaddon}}
+    {\iffieldundef{maintitle}
+       {}
+       {\usebibmacro{maintitle}%
+	\newunit%
+	\iffieldundef{volume}
+	  {}
+	  {\printfield{volume}%
+           \printfield{part}%
+           \setunit{\addcolon\space}}}}%
+  \usebibmacro{title}%
+  \newunit}
+
+\newbibmacro*{maintitle+booktitle}{%
+%\printfield[shorttitle]{labeltitle}
+  \iffieldundef{maintitle}
+    {}
+    {\usebibmacro{maintitle}%
+     \newunit%
+     \iffieldundef{volume}
+       {}
+       {\printfield{volume}%
+        \printfield{part}%
+        \setunit{\addcolon\space}}}%
+  \usebibmacro{booktitle}%
+  \newunit}
+  
+\newbibmacro*{title+issuetitle}{%
+  \usebibmacro{periodical}%
+  \setunit*{\addspace}%
+  \iffieldundef{series}
+    {}
+    {\newunit%
+     \printfield{series}%
+     \setunit{\addspace}}%
+  \printfield{volume}%
+  \setunit*{\adddot}%
+  \printfield{number}%
+  \setunit{\addcomma\space}%
+  \printfield{eid}%
+  \setunit{\addspace}%
+  \usebibmacro{issue+date}%
+  \newunit%
+  \usebibmacro{issue}%
+  \newunit}
+
+\newbibmacro*{institution+location+year}{%
+  \printlist{location}%
+  \newunit%
+  \printlist{institution}%
+  \newunit%
+  \printfield{year}%
+  \newunit}
+
+\newbibmacro*{chapter+pages}{%
+  \printfield{chapter}%
+  \setunit*{\addcomma\space}%
+  \printfield{pages}%
+  \newunit}
+
+\newbibmacro*{finentry}{\finentry}
+
+  
+\newbibmacro*{doi+eprint+url}{%
+  \iftoggle{bbx:doi}%
+    {\printfield{doi}}%
+    {}%
+  \newunit%
+  \iftoggle{bbx:eprint}%
+    {\usebibmacro{eprint}}%
+    {}%
+  \newunit%
+  \iftoggle{bbx:url}%Modif. du 20/05/2016: n'afficher l'URL que si pas de doi.
+  	{\iftoggle{bbx:doi}%
+    		{\iffieldundef{doi}%
+    			{\iffieldundef{url}{}{\usebibmacro{url+urldate}}}%
+    			{}}%
+    		{\iffieldundef{url}{}{\usebibmacro{url+urldate}}}%
+  	}
+}
+
+\renewbibmacro*{annotation}{%
+	\iftoggle{bbx:annotatedBibliography}{%
+		\iffieldundef{annotation}{}{
+			\addspace%
+			\bibsentence%
+			\printfield{annotation}%
+			\finentry%
+		}
+	}{}%
+}
+
+%%%%% %%%%% %%%%% %%%%% %%%%% %%%%% 
+%%%%% Bibliography Driver     %%%%% 
+%%%%% %%%%% %%%%% %%%%% %%%%% %%%%% 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+%Et on est prêts, c'est parti !
+\InitializeBibliographyStyle{% Specifies arbitrary code to be inserted at the beginning of the bibliography
+  \global\undef\bbx@lasthash}
+
+\DeclareBibliographyDriver{shorthand}{%
+  \usedriver
+    {\DeclareNameAlias{sortname}{default}}
+    {\thefield{entrytype}}%
+  \finentry}
+
+\DeclareBibliographyDriver{article}{%%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author/editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \usebibmacro{byauthor}%
+  \newunit%
+  \usebibmacro{byeditor+others}%
+  \newunit%
+%  \usebibmacro{in:}% pas de dans pour les articles, décommenter pour en avoir
+  \usebibmacro{journal+issuetitle}%
+  \newunit%
+  \printfield{note}%
+  %\newunit%
+  \setunit*{\newunitpunct}%
+  \printfield{pages}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+  }
+
+\DeclareBibliographyDriver{book}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author/editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{maintitle+title}%
+  \newunit%
+  \usebibmacro{byauthor}%
+  \newunit%
+  \usebibmacro{byeditor+others}%
+  \newunit%
+  \iffieldundef{maintitle}%
+    {\printfield{volume}%
+     \printfield{part}}%
+    {}%
+  \newunit%
+  \printfield{volumes}%
+  \newunit%
+  \printfield{edition}%
+  \setunit*{\newunitpunct}%
+  \printfield{note}%
+  \setunit*{\newunitpunct}%
+  \usebibmacro{location+year}%
+  \setunit*{\addspace}%
+  \usebibmacro{series+number}%
+  \setunit{\newunitpunct}%  
+  \newunit%
+  \usebibmacro{chapter+pages}%
+%  \newunit%
+%  \printfield{pagetotal}
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%  
+  }
+
+\DeclareBibliographyDriver{booklet}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author/editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \usebibmacro{byeditor}%
+  \newunit%
+  \printfield{howpublished}%
+  \newunit%
+  \printfield{type}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{location+year}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+  \newunit%
+%  \printfield{pagetotal}
+%  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{collection}{%
+  \usebibmacro{bibindex}%
+ % \usebibmacro{editor}%
+ % \setunit{\labelnamepunct}
+  \usebibmacro{maintitle+title}%
+  \newunit%
+  \usebibmacro{byeditor+others}%
+  \newunit%
+  \iffieldundef{maintitle}%
+    {\printfield{volume}%
+     \printfield{part}}%
+    {}%
+  \newunit%
+  \printfield{volumes}%
+  \newunit%
+  \printfield{edition}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{location+year}%
+  \setunit*{\addspace}%
+  \usebibmacro{series+number}%
+  \setunit*{\newunitpunct}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+  \newunit%
+%  \printfield{pagetotal}%
+%  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{inbook}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \usebibmacro{in:}%
+  \ifentryinbib{\thefield{crossref}}{%
+	\entrydata{\thefield{crossref}}{%
+		\iffieldundef{shorttitle}{%
+	  			\printfield[shorttitle]{title}%
+	  		}{%
+  				\printfield[shorttitle]{shorttitle}
+  			}
+  		}%	
+	}
+  {%
+	  \usebibmacro{bybookauthor}%
+	  \usebibmacro{maintitle+booktitle}%
+	  \newunit%
+	  \usebibmacro{byeditor+others}%
+	  \newunit%
+	  \printfield{volumes}%
+	  \newunit%
+	  \setunit*{\addspace}%
+	  \printfield{edition}%
+	  \setunit*{\newunitpunct}%
+	  \printfield{note}%
+	  \setunit*{\newunitpunct}%
+	  \usebibmacro{location+year}%
+	  \setunit*{\addspace}%
+	  \usebibmacro{series+number}%
+	  \setunit*{\newunitpunct}%
+ }
+  \newunit%
+  \iffieldundef{maintitle}%
+  	{\printfield{volume}%
+	\printfield{part}}%
+	{}%
+  \newunit%
+  %\setunit*{\addcomma\space}%
+  \usebibmacro{chapter+pages}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{incollection}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \usebibmacro{in:}%
+  \ifentryinbib{\thefield{crossref}}{%
+	\entrydata{\thefield{crossref}}{%
+		\iffieldundef{shorttitle}{%
+	  			\printfield[shorttitle]{title}%
+	  		}{%
+  				\printfield[shorttitle]{shorttitle}
+  			}
+  		}%	
+	}
+  {%
+  	\iffieldundef{editor}{}{%
+	  \usebibmacro{editorincoll}%
+	  \newunit%
+	  }%
+	\usebibmacro{maintitle+booktitle}%
+	%  \newunit%
+	 % \printlist{language}%
+	\newunit%
+	\usebibmacro{byeditor+others}%
+	\newunit%
+	\printfield{volumes}%
+	\newunit%
+	\setunit*{\addspace}%
+	\printfield{edition}%
+	\setunit*{\newunitpunct}%
+	\printfield{note}%
+	\setunit*{\newunitpunct}%
+	\usebibmacro{location+year}%
+	\setunit*{\addspace}%
+	\usebibmacro{series+number}%
+	\setunit*{\newunitpunct}%
+  }
+  \newunit%
+  \iffieldundef{maintitle}%
+  	{\printfield{volume}%
+	\printfield{part}}%
+	{}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{inproceedings}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  %\setunit{\addcomma\space}%
+  \usebibmacro{in:}%
+    \ifentryinbib{\thefield{crossref}}{%
+	\entrydata{\thefield{crossref}}{%
+		\iffieldundef{shorttitle}{%
+	  			\printfield[shorttitle]{title}%
+	  		}{%
+  				\printfield[shorttitle]{shorttitle}
+  			}
+  		}%	
+	}
+  {%
+	  \iffieldundef{editor}{}{%
+	  \usebibmacro{editorincoll}%
+	  \newunit}%
+	  \usebibmacro{maintitle+booktitle}%
+	  \newunit%
+	  \printfield{venue}%
+	  %\newunit%
+	  %\printlist{language}%
+	  \newunit%
+	  \usebibmacro{byeditor+others}%
+	  \newunit%
+	  \setunit*{\addspace}%
+	  \printfield{note}%
+	  \setunit*{\newunitpunct}%
+	  \printlist{organization}%
+	  \newunit%
+	  \usebibmacro{location+year}%
+	  \newunit%
+	  \setunit*{\addspace}%
+	  \usebibmacro{series+number}%
+	  \setunit*{\newunitpunct}%
+	  \newunit%
+	}
+  \newunit%
+  \iffieldundef{maintitle}%
+  	{\printfield{volume}%
+	\printfield{part}}%
+	{}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{manual}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author/editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \usebibmacro{byeditor}%
+  \newunit%
+  \setunit*{\addspace}%
+  \printfield{type}%
+  \setunit*{\newunitpunct}%
+  \printfield{version}%
+  \setunit*{\newunitpunct}%
+  \printfield{note}%
+  \setunit*{\newunitpunct}%
+  \printlist{organization}%
+  \setunit*{\newunitpunct}%
+  \printfield{edition}%
+  \setunit*{\newunitpunct}%
+  \usebibmacro{location+year}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+%  \newunit%
+%  \printfield{pagetotal}
+  \setunit{\addspace}%
+  \usebibmacro{series+number}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{misc}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author/editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \usebibmacro{byeditor}%
+  \newunit%
+  \printfield{howpublished}%
+  \newunit%
+  \printfield{type}%
+  \newunit%
+  \printfield{version}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \printlist{organization}%
+  \newunit%
+  \printlist{location}%
+  \newunit%
+  \usebibmacro{date}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{online}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author/editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \usebibmacro{byeditor}%
+  \newunit%
+  \printfield{version}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \printlist{organization}%
+  \newunit%
+  \usebibmacro{date}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{patent}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author+holder}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printfield{type}%
+  \setunit*{\addspace}%
+  \printfield{number}%
+  \iflistundef{location}%
+    {}%
+    {\setunit*{\addspace}%
+     \printtext[parens]{%
+       \printlist[][-\value{listtotal}]{location}}}%
+  \newunit%
+  \printfield{version}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{date}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{periodical}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title+issuetitle}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \usebibmacro{byeditor}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{proceedings}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{maintitle+title}%
+  \newunit%
+  \printfield{venue}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \usebibmacro{byeditor+others}%
+  \newunit%
+  \iffieldundef{maintitle}%
+    {\printfield{volume}%
+     \printfield{part}}%
+    {}%
+  \newunit%
+  \printfield{volumes}%
+  \newunit%
+  \setunit*{\addspace}%
+  \printfield{note}%
+  \setunit*{\newunitpunct}%
+  \printlist{organization}%
+  \setunit*{\newunitpunct}%
+  \usebibmacro{location+year}%
+  \setunit*{\addspace}%
+  \usebibmacro{series+number}%
+  \setunit*{\newunitpunct}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+%  \newunit%
+%  \printfield{pagetotal}
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{report}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \printfield{type}%
+  \setunit*{\addspace}%
+  \printfield{number}%
+  \newunit%
+  \printfield{version}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{institution+location+year}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+%  \newunit%
+%  \printfield{pagetotal}
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{thesis}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \printfield{type}%
+  \newunit%
+  \usebibmacro{institution+location+year}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+%  \newunit%
+%  \printfield{pagetotal}
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+\DeclareBibliographyDriver{unpublished}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \printfield{howpublished}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{date}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}%
+  \usebibmacro{annotation}%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Et maintenant les bibliography drivers pour les premières citations
+% pleines, mais dans lesquelles on veut un ordre différent pour les 
+% auteurs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\DeclareBibliographyDriver{cite:article}{%%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote/editor}%
+  %\printnames[family-given][1-10]{author} 
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \usebibmacro{byauthor}%
+  \newunit%
+  \usebibmacro{byeditor+others}%
+%	  \newunit%
+  \setunit{\addcomma\space}%
+%  \usebibmacro{in:}% pas de dans pour les articles, décommenter pour en avoir
+  \usebibmacro{journal+issuetitle}%
+%	  \newunit%
+  \setunit*{\addcomma\space}%
+  \printfield{note}%
+%	  \newunit%
+  \setunit*{\newunitpunct}%
+  \printfield{pages}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:book}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote/editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{maintitle+title}%
+  \newunit%
+  \usebibmacro{byauthor}%
+  \newunit%
+  \usebibmacro{byeditor+others}%
+  \newunit%
+  \iffieldundef{maintitle}%
+    {\printfield{volume}%
+     \printfield{part}}%
+    {}%
+  \newunit%
+  \printfield{volumes}%
+  \newunit%
+  \printfield{edition}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{location+year}%
+  \setunit{\addspace}%
+  \usebibmacro{series+number}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+%  \newunit%
+%  \printfield{pagetotal}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:booklet}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote/editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \usebibmacro{byeditor}%
+  \newunit%
+  \printfield{howpublished}%
+  \newunit%
+  \printfield{type}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{location+year}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+%  \newunit%
+%  \printfield{pagetotal}
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:collection}{%
+  \usebibmacro{bibindex}%
+ % \usebibmacro{editor}%
+ % \setunit{\labelnamepunct}
+  \usebibmacro{maintitle+title}%
+  \newunit%
+  \usebibmacro{byeditor+others}%
+  \newunit%
+  \iffieldundef{maintitle}%
+    {\printfield{volume}%
+     \printfield{part}}%
+    {}%
+  \newunit%
+  \printfield{volumes}%
+  \newunit%
+  \printfield{edition}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{location+year}%
+  \setunit{\addspace}%
+  \usebibmacro{series+number}%
+  \setunit*{\newunitpunct}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+%  \newunit%
+%  \printfield{pagetotal}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:inbook}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \usebibmacro{in:}%
+  \iffieldundef{crossref}{
+  	\usebibmacro{bybookauthor}%
+  	\usebibmacro{maintitle+booktitle}%
+  	%\newunit%
+  	%\printlist{language}%
+  	\newunit%
+ 	\usebibmacro{byeditor+others}%
+  	\newunit%
+  	\printfield{volumes}%
+  	\newunit%
+  	\setunit*{\addspace}%
+  	\printfield{edition}%
+  	\newunit%
+  	\printfield{note}%
+  	\newunit%
+  	\usebibmacro{location+year}%
+  	\setunit{\addspace}%
+  	\usebibmacro{series+number}%
+  }{%
+    \clearfield{prenote}%
+  	\clearfield{postnote}%
+  	\cite{\thefield{crossref}}
+  }
+  \newunit%
+  \iffieldundef{maintitle}%
+  	{\printfield{volume}%
+	\printfield{part}}%
+	{}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:incollection}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+%  \setunit{\addcomma\space}%
+  \usebibmacro{in:}%
+  \iffieldundef{crossref}{%
+	  \iffieldundef{editor}{}{%
+	  \usebibmacro{editorincoll}%
+	  \newunit}%
+	  \usebibmacro{maintitle+booktitle}%
+	%  \newunit%
+	 % \printlist{language}%
+	  \newunit%
+	  \usebibmacro{byeditor+others}%
+	  \newunit%
+	  \printfield{volumes}%
+	  \newunit%
+	  \setunit*{\addspace}%
+	  \printfield{edition}%
+	  \setunit*{\newunitpunct}%
+	  \printfield{note}%
+	  \setunit*{\newunitpunct}%
+	  \usebibmacro{location+year}%
+	  \setunit*{\addspace}%
+	  \usebibmacro{series+number}%
+	 \setunit*{\newunitpunct}%
+ }{%
+ 	\clearfield{prenote}%
+  	\clearfield{postnote}%
+ 	\cite[][]{\thefield{crossref}}
+ }%
+  \newunit%
+  \iffieldundef{maintitle}%
+  	{\printfield{volume}%
+	\printfield{part}}%
+	{}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:inproceedings}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \setunit{\addcomma\space}%
+  \usebibmacro{in:}%
+  \iffieldundef{crossref}{%
+	  \iffieldundef{editor}{}{%
+	  \usebibmacro{editorincoll}%
+	  \newunit}%
+	  \usebibmacro{maintitle+booktitle}%
+	  \newunit%
+	  \printfield{venue}%
+	  %\newunit%
+	  %\printlist{language}%
+	  \newunit%
+	  \usebibmacro{byeditor+others}%
+	  \newunit%
+	  \printfield{volumes}%
+	  %
+	  \setunit*{\addspace}%
+	  \printfield{note}%
+	  \setunit*{\newunitpunct}%
+	  \printlist{organization}%
+	  \setunit*{\newunitpunct}%
+	  \usebibmacro{location+year}%
+	  \setunit*{\addspace}%
+	  \usebibmacro{series+number}%
+	  \setunit*{\newunitpunct}%
+  }{%
+  	\clearfield{prenote}%
+  	\clearfield{postnote}%
+  	\cite{\thefield{crossref}}%
+  }
+  \newunit%
+  \iffieldundef{maintitle}%
+  	{\printfield{volume}%
+	\printfield{part}}%
+	{}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:manual}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote/editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \usebibmacro{byeditor}%
+  \newunit%
+  \setunit*{\addspace}%
+  \printfield{type}%
+  \setunit*{\newunitpunct}%
+  \printfield{version}%
+  \setunit*{\newunitpunct}%
+  \printfield{note}%
+  \setunit*{\newunitpunct}%
+  \printlist{organization}%
+  \setunit*{\newunitpunct}%
+  \printfield{edition}%
+  \setunit*{\newunitpunct}%
+  \usebibmacro{location+year}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+%  \newunit%
+%  \printfield{pagetotal}
+  \setunit{\addspace}%
+  \usebibmacro{series+number}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:misc}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote/editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \usebibmacro{byeditor}%
+  \newunit%
+  \printfield{howpublished}%
+  \newunit%
+  \printfield{type}%
+  \newunit%
+  \printfield{version}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \printlist{organization}%
+  \newunit%
+  \printlist{location}%
+  \newunit%
+  \usebibmacro{date}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:online}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote/editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \usebibmacro{byeditor}%
+  \newunit%
+  \printfield{version}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \printlist{organization}%
+  \newunit%
+  \usebibmacro{date}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:patent}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote+holder}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printfield{type}%
+  \setunit*{\addspace}%
+  \printfield{number}%
+  \iflistundef{location}%
+    {}%
+    {\setunit*{\addspace}%
+     \printtext[parens]{%
+       \printlist[][-\value{listtotal}]{location}}}%
+  \newunit%
+  \printfield{version}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{date}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:periodical}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title+issuetitle}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \usebibmacro{byeditor}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:proceedings}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{editor}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{maintitle+title}%
+  \newunit%
+  \printfield{venue}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \usebibmacro{byeditor+others}%
+  \newunit%
+  \iffieldundef{maintitle}%
+    {\printfield{volume}%
+     \printfield{part}}%
+    {}%
+  \newunit%
+  \printfield{volumes}%
+  \newunit%
+  \setunit*{\addspace}%
+  \printfield{note}%
+  \setunit*{\newunitpunct}%
+  \printlist{organization}%
+  \setunit*{\newunitpunct}%
+  \usebibmacro{location+year}%
+  \setunit*{\addspace}%
+  \usebibmacro{series+number}%
+  \setunit*{\newunitpunct}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+%  \newunit%
+%  \printfield{pagetotal}
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:report}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \printfield{type}%
+  \setunit*{\addspace}%
+  \printfield{number}%
+  \newunit%
+  \printfield{version}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{institution+location+year}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+%  \newunit%
+%  \printfield{pagetotal}
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:thesis}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \printfield{type}%
+  \newunit%
+  \usebibmacro{institution+location+year}%
+  \newunit%
+  \usebibmacro{chapter+pages}%
+%  \newunit%
+%  \printfield{pagetotal}
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\DeclareBibliographyDriver{cite:unpublished}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{author-fullnote}%
+  \setunit{\labelnamepunct}%
+  \usebibmacro{title}%
+  \newunit%
+  \printlist{language}%
+  \newunit%
+  \printfield{howpublished}%
+  \newunit%
+  \printfield{note}%
+  \newunit%
+  \usebibmacro{date}%
+  \newunit%
+  \usebibmacro{doi+eprint+url}%
+  \newunit%
+  \printfield{addendum}%
+  \usebibmacro{finentry}}
+
+\endinput
