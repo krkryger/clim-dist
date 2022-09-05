@@ -1,5 +1,5 @@
 import pandas as pd
-from climdist.data import load
+from climdist.utils import load_df
 import sys
 import os
 import json
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     if not os.path.exists('/'.join(_savepath.split('/')[:-1])):
         sys.exit(f'Savepath {_savepath} does not exist!')
 
-    df = load('main', readability=True, heading2=False)
+    df = load_df('main', readability=True, heading2=False)
     indexes = df[(df.readability==True) & (df.year.isin(_timerange))].index
 
     bigram_model = gensim.models.phrases.Phrases.load(_bigram_path)

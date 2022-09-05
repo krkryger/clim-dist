@@ -22,4 +22,6 @@ pipeline/ner/
 
 v_env/
 
+rz_acta/
+
 !references/M2_workflow_chart.png
