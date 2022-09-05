@@ -30,14 +30,14 @@ def detect_entities(patterns, sentences):
 if __name__ == '__main__':
 
     start = time.perf_counter()
-    ruler = pd.read_excel('../pipeline/ner/ruler_patterns.xlsx')
+    ruler = pd.read_excel('../pipeline/ner/keyword_patterns.xlsx')
 
     print('Starting entity detection')
     entities = detect_entities(ruler['key'].values, sentences())
 
-    date = time.strftime('%d%m%y')
+    #date = time.strftime('%d%m%y')
 
-    with open(f'../data/processed/all_keywords_{date}.json', 'w', encoding='utf8') as f:
+    with open(f'../data/processed/keyword_occurences.json', 'w', encoding='utf8') as f:
         json.dump(entities, f)
 
     stop = time.perf_counter()
