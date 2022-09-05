@@ -21,7 +21,7 @@ class OCR_predict:
         self.POS_tags = ['PRON', 'ADV', 'AUX', 'NUM', 'VERB', 'X', 'ADJ', 'SPACE', 'PUNCT']
 
 
-    def load_svm_model(self, path='../data/models/ocr_quality_model_150921/ocr_quality_model.pkl'):
+    def load_svm_model(self, path='../data/models/ocr_quality_model/ocr_quality_model.pkl'):
 
         with open(path, 'rb') as f:
             model = pickle.load(f)
@@ -69,18 +69,51 @@ class OCR_predict:
         return result
 
 
-# if __name__ == '__main__':
+def generate_ocr_column(df, output_path):
 
-#     import pandas as pd
-#     import spacy
+    """Input: (preprocessed) main df.
+        Output: column with a OCR readability prediction for each entry.
+        Uses the default spacy model and the class OCR_predict to generate either 0 or 1 for each column.
+        NB! Can take 15-20 hours."""
 
-#     # load default spacy model
-#     print('Loading spacy')
-#     nlp = spacy.load('de_core_news_md')
+    print('Generating OCR readability column')
+    import spacy
+    from tqdm import tqdm
 
-#     print('Loading dataframe')
-#     df = pd.read_parquet('../data/processed/RZ_processed.parquet')
+    # load default spacy model
+    print('Loading spacy')
+    nlp = spacy.load('de_core_news_md')
+    df = pd.read_parquet('../data/processed/RZ_processed.parquet')
 
-#     ocr = OCR_predict(nlp)
+    ocr = OCR_predict(nlp)
+    
+    readable = []
 
-#     ocr.create_ocr_column(df, '../data/processed/OCR_readability_column_beta.parquet')
+    for i in tqdm(df.index, mininterval=5, maxinterval=30, colour='green'):
+        text = df.loc[i, 'full_text']
+        readable.append(ocr.predict(text))
+        
+    column = pd.DataFrame(data=readable, index=df.index, columns=['readable'])
+
+    if output_path:
+        column.to_parquet(output_path, index=True)
+
+    print('Finished')
+    return column
+
+
+if __name__ == '__main__':
+
+    import pandas as pd
+    import spacy
+
+    # load default spacy model
+    print('Loading spacy')
+    nlp = spacy.load('de_core_news_md')
+
+    print('Loading dataframe')
+    df = pd.read_parquet('../data/processed/RZ_processed.parquet')
+
+    ocr = OCR_predict(nlp)
+
+    ocr.create_ocr_column(df, '../data/processed/RZ_readability.parquet')
