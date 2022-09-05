@@ -42,14 +42,14 @@ class Analyse():
         self.sentences = list(self.load_sentences())
         
         print('Importing detected keywords')
-        with open('../data/processed/all_keywords_100522.json', 'r', encoding='utf') as f:
+        with open('../data/processed/keyword_occurrences.json', 'r', encoding='utf') as f:
             self.keywords = json.load(f)
             
         print('Importing auxiliaries')
-        self.ruler = pd.read_excel('../pipeline/ruler_patterns_060522.xlsx', index_col='Unnamed: 0')
-        self.wea_df = pd.read_csv('../data/processed/wea_df_010522.tsv', sep='\t', encoding='utf8', index_col=0)
-        self.wordform_df = pd.read_csv('../data/processed/wordform_df_010522.tsv', sep='\t', encoding='utf8', index_col=0)
-        self.phenomenon_df = pd.read_csv('../data/processed/phenomenon_df_110522.tsv', sep='\t', encoding='utf8', index_col=0)
+        self.ruler = pd.read_excel('../pipeline/keyword_patterns.xlsx', index_col='Unnamed: 0')
+        self.wea_df = pd.read_csv('../data/pipeline/wea_df_010522.tsv', sep='\t', encoding='utf8', index_col=0)
+        self.wordform_df = pd.read_csv('../data/pipeline/wordform_df_010522.tsv', sep='\t', encoding='utf8', index_col=0)
+        self.phenomenon_df = pd.read_csv('../data/pipeline/phenomenon_df_110522.tsv', sep='\t', encoding='utf8', index_col=0)
         
         self.ix_to_year = self.df['year'].to_dict()
             
@@ -68,7 +68,7 @@ class Analyse():
         return list(self.ruler.wordform[self.ruler.phenomenon == phenomenon].unique())
         
     def load_sentences(self):
-        with open('../data/processed/RZ_sentences.jsonl', 'r', encoding='utf8') as f:
+        with open('../data/processed/RZ_tokenized.jsonl', 'r', encoding='utf8') as f:
             for ix, line in tqdm(enumerate(f.readlines())):
                 yield json.loads(line)
                 

@@ -125,54 +125,24 @@ def generate_heading2(df):
     df.heading2.replace('Petersburg', 'St. Petersburg', inplace=True)
     ### Add exception for  "Am"
     df = df.fillna(value=np.nan)
+    df['heading2'].to_parquet('../data/processed/RZ_heading2.parquet')
 
 
-def generate_ocr_column(df, output_path):
 
-    """Input: (preprocessed) main df.
-        Output: column with a OCR readability prediction for each entry.
-        Uses the default spacy model and the class OCR_predict to generate either 0 or 1 for each column. Can take 15-20 hours."""
+# def create_sample_df(df):
 
-    import spacy
-    from climdist.ocr_quality import OCR_predict
-
-    # load default spacy model
-    print('Loading spacy')
-    nlp = spacy.load('de_core_news_md')
-
-    print('Loading dataframe')
-    df = pd.read_parquet('../data/processed/RZ_processed.parquet')
-
-    ocr = OCR_predict(nlp)
-    
-    readable = []
-
-    for i in tqdm(df.index, mininterval=5, maxinterval=30, colour='green'):
-        text = df.loc[i, 'full_text']
-        readable.append(ocr.predict(text))
-        
-    column = pd.DataFrame(data=readable, index=df.index, columns=['readable'])
-
-    if output_path:
-        column.to_parquet(output_path, index=True)
-
-    print('Finished')
-    return column
-
-
-def create_sample_df(df):
-
-    sample_df = df.sample(10000)
-    sample_df.to_parquet('../data/processed/RZ_sample.parquet')
-    print('Created sample')
+#     sample_df = df.sample(10000)
+#     sample_df.to_parquet('../data/processed/RZ_sample.parquet')
+#     print('Created sample')
 
 
 if __name__ == "__main__":
 
     df = basic_preprocess()
     generate_heading2(df)
-    create_sample_df(df)
+    # create_sample_df(df)
     df.to_parquet('../data/processed/RZ_processed.parquet')
+    # generate_ocr_column(df, '../data/processed/RZ_readability.parquet')
     print('Finished')
 
     
