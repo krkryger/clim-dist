@@ -12,8 +12,6 @@ climdist/test.py
 
 temp/
 
-references/*
-
 streamlit/
 
 archive/
@@ -24,4 +22,8 @@ v_env/
 
 rz_acta/
 
+references/*
 !references/M2_workflow_chart.png
+!references/memoire/
+references/memoire/tex_backup*.zip
+references_memoire/latex_output/
